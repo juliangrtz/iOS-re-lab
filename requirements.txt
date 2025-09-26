@@ -1,0 +1,4 @@
+lief
+capstone
+unicorn
+colorama
