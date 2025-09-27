@@ -32,7 +32,7 @@ python scan.py target --out results.json
 
 ## Example output
 
-```bash
+```plain
 [*] Analysis started: cpu=ARM64, imagebase=0x100000000, pie=True
 [*] Scanning imports...
 [!] Suspicious import: sysctl
