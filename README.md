@@ -21,7 +21,7 @@ Detects common anti-debugging techniques in 64-bit Mach-O binaries. Made possibl
 ## Installation
 
 ```bash
-pip install -r .\requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -39,8 +39,8 @@ python scan.py target --out results.json
 [!] Suspicious import: open
 [!] Suspicious import: dlsym
 [!] Suspicious import: access
-[*] Scanning syscalls...
-[*] This might take a while, every instruction must be disassembled.
+[*] Use cross-references to check if these functions are used to detect a debugger.
+[*] Scanning syscalls... This might take a while, every instruction must be disassembled.
 [*] Found 3 code sections: __text, __objc_stubs, __stubs
 [1] exit @ 0x3c1a8
 [1] exit @ 0x3d420
