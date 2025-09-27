@@ -1,4 +1,4 @@
-# ios-antiantidebug
+# iOS-antiantidebug
 
 Detects common anti-debugging techniques in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/) and [Capstone](http://www.capstone-engine.org/).
 

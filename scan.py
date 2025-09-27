@@ -12,7 +12,7 @@ from capstone.arm64 import *
 
 ANTI_DEBUG_FUNCS = [
     "ptrace", "dlsym", "sysctl", "task_get_exception_ports",
-    "isatty", "ioctl", "getpid", "getppid", "syscall"
+    "isatty", "ioctl", "getpid", "getppid", "syscall", "exit"
 ]
 # anti-JB: "open", "access", "stat", "stat64", "fstat", "lstat"
 
