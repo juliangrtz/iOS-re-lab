@@ -88,6 +88,7 @@ def get_svc_number(ctx: List[Dict]) -> int | None:
 
 
 def scan_brk_instructions(code_sections: set[MachO.Section], verbose: bool = False) -> List[Dict]:
+    print("[*] Scanning for BRK instructions...")
     results = []
     if not code_sections:
         return results
@@ -136,7 +137,7 @@ def disasm(sec_bytes: bytes, base_va: int, section_offset: int, syscall_map: Dic
             continue
 
         ctx = []
-        for ins in cs.disasm(sec_bytes[i-DISASM_CONTEXT_WINDOW:i], 0):
+        for ins in cs.disasm(sec_bytes[max(0, i-DISASM_CONTEXT_WINDOW):i], base_va + max(0, i-DISASM_CONTEXT_WINDOW)):
             ctx.append({
                 "address": ins.address,
                 "mnemonic": ins.mnemonic,
@@ -213,7 +214,8 @@ def parse_binaries(path: str) -> List[lief.MachO.Binary]:
             try:
                 b = parsed.at(i)
                 binaries.append(b)
-            except Exception:
+            except Exception as e:
+                print(f"Failed to parse fat binary: {e}")
                 pass
     elif isinstance(parsed, lief.MachO.Binary):
         binaries.append(parsed)

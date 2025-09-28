@@ -42,6 +42,7 @@ python scan.py target --out results.json
 [!] Suspicious import: sysctl
 [!] Suspicious import: getpid
 [*] Use cross-references to check if these functions are used to detect a debugger.
+[*] Scanning for BRK instructions...
 [!] BRK instruction @ 0x3ba9c
 [!] BRK instruction @ 0x3c804
 [!] BRK instruction @ 0x3cc0c
