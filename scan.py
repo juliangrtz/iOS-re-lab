@@ -137,7 +137,9 @@ def disasm(sec_bytes: bytes, base_va: int, section_offset: int, syscall_map: Dic
             continue
 
         ctx = []
-        for ins in cs.disasm(sec_bytes[max(0, i-DISASM_CONTEXT_WINDOW):i], base_va + max(0, i-DISASM_CONTEXT_WINDOW)):
+        start = 0
+        end = i - DISASM_CONTEXT_WINDOW
+        for ins in cs.disasm(sec_bytes[max(start, end):i], base_va + max(start, end)):
             ctx.append({
                 "address": ins.address,
                 "mnemonic": ins.mnemonic,
