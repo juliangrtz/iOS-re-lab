@@ -5,7 +5,7 @@ Detects common anti-debugging techniques in 64-bit Mach-O binaries. Made possibl
 ## Features
 
 - Syscall-based detections (ptrace, exit...)
-- Suspicious imports (open, access, stat...)
+- Suspicious imports (sysctl, dlsym, getppid...)
 - Timing / anti-breakpoint heuristics
 - TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
 - TBD: Network / IPC anti-debug checks (e.g. debugger processes via sockets)
@@ -34,11 +34,17 @@ python scan.py target --out results.json
 ```plain
 [*] Analysis started: cpu=ARM64, imagebase=0x100000000, pie=True
 [*] Scanning imports...
-[!] Suspicious import: sysctl
-[!] Suspicious import: open
+[!] Suspicious import: dlopen
 [!] Suspicious import: dlsym
-[!] Suspicious import: access
+[!] Suspicious import: clock_gettime
+[!] Suspicious import: exit
+[!] Suspicious import: gettimeofday
+[!] Suspicious import: sysctl
+[!] Suspicious import: getpid
 [*] Use cross-references to check if these functions are used to detect a debugger.
+[!] BRK instruction @ 0x3ba9c
+[!] BRK instruction @ 0x3c804
+[!] BRK instruction @ 0x3cc0c
 [*] Scanning syscalls... This might take a while, every instruction must be disassembled.
 [*] Found 3 code sections: __text, __objc_stubs, __stubs
 [1] exit @ 0x3c1a8
