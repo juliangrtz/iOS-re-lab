@@ -6,11 +6,10 @@ Detects common anti-debugging techniques in 64-bit Mach-O binaries. Made possibl
 
 - Syscall-based detections (ptrace, exit...)
 - Suspicious imports (open, access, stat...)
+- Timing / anti-breakpoint heuristics
 - TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
-- TBD: Timing / anti-breakpoint heuristics
-- TBD: Hardware debug register / ptrace register detection
-- TBD: Network / IPC anti-debug checks (e.g., debugger processes via sockets)
-- TBD: Runtime string scanning using emulation (Unicorn?)
+- TBD: Network / IPC anti-debug checks (e.g. debugger processes via sockets)
+- TBD: String scanning
 - TBD: Heuristics for obfuscated or dynamically resolved syscalls
 
 ## Requirements
