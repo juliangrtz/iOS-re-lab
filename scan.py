@@ -10,13 +10,14 @@ from lief import MachO
 from capstone import *
 from capstone.arm64 import *
 
-ANTI_DEBUG_FUNCS = [
-    "isatty", "getpid", "getppid", "mach_task_self", "task_get_exception_ports", "ptrace", "clock_gettime", "dlsym", "ioctl",
-    "gettimeofday", "kill", "mach_absolute_time", "dlopen", "sysctl", "exit", "syscall", "kinfo_proc", "task_threads"
-]
-
 # increase this if syscall numbers aren't being detected correctly
 DISASM_CONTEXT_WINDOW = 40
+
+with open("strings.json", "r") as f:
+    STRINGS = json.load(f)
+
+SUSPICIOUS_IMPORTS = STRINGS["SUSPICIOUS_IMPORTS"]
+JAILBREAK_STRINGS = STRINGS["JAILBREAK_STRINGS"]
 
 lief.disable_leak_warning()
 
@@ -43,23 +44,81 @@ def get_code_sections(binary: MachO.Binary) -> set[MachO.Section]:
     return res
 
 
-def find_suspicious_imports(binary: MachO.Binary) -> List[str]:
+def _build_lookup_table(suspicious: Dict[str, List[str]]) -> Dict[str, str]:
+    table: Dict[str, str] = {}
+    for cat, names in suspicious.items():
+        for n in names:
+            key = n.lstrip("_").lower()
+            if key not in table:
+                table[key] = cat
+            orig_key = n.lower()
+            if orig_key not in table:
+                table[orig_key] = cat
+    return table
+
+
+def find_suspicious_symbols(binary: lief.MachO.Binary) -> List[str]:
     found = set()
+    lookup = _build_lookup_table(SUSPICIOUS_IMPORTS)
 
     for sym in getattr(binary, "imported_symbols", []):
         name = sym.name if hasattr(sym, "name") else str(sym)
-        clean_name = name.lstrip("_")
-        if clean_name in ANTI_DEBUG_FUNCS:
-            found.add(clean_name)
+        clean = name.lstrip("_").lower()
 
-    for sect in binary.sections:
-        if sect.name in ["__la_symbol_ptr", "__nl_symbol_ptr"]:
-            data = bytes(sect.content or b"")
-            for func in ANTI_DEBUG_FUNCS:
-                if func.encode() in data:
-                    found.add(func + " (la_symbol_ptr)")
+        if clean in lookup:
+            found.add(f"{clean} ({lookup[clean]})")
+        elif name.lower() in lookup:
+            found.add(f"{name} ({lookup[name.lower()]})")
+        else:
+            lname = name.lower()
+            for jb in JAILBREAK_STRINGS:
+                if jb.lower() in lname:
+                    found.add(
+                        f"{jb} (ANTI_JAILBREAK_STRING, import_symbol={name})")
 
-    return list(found)
+    for sect in getattr(binary, "sections", []):
+        sect_name = getattr(sect, "name", "")
+        data = bytes(getattr(sect, "content", b"") or b"")
+
+        if sect_name in ("__la_symbol_ptr", "__nl_symbol_ptr"):
+            for key, cat in lookup.items():
+                try:
+                    kb = key.encode("utf-8")
+                except Exception:
+                    continue
+                if kb and kb in data:
+                    found.add(f"{key} ({cat}, la_symbol_ptr)")
+
+        if data:
+            lower_data = data.lower()
+            for jb in JAILBREAK_STRINGS:
+                jb_b = jb.encode("utf-8").lower()
+                if jb_b in lower_data:
+                    found.add(
+                        f"{jb} (ANTI_JAILBREAK_STRING, section={sect_name})")
+
+            for key, cat in lookup.items():
+                if len(key) < 3:
+                    continue
+                try:
+                    kb = key.encode("utf-8").lower()
+                except Exception:
+                    continue
+                if kb in lower_data:
+                    label = f"{key} ({cat}, rodata)"
+                    if label not in found:
+                        found.add(label)
+
+    if hasattr(binary, "objc_classes"):
+        for cls in getattr(binary, "objc_classes") or []:
+            cls_name = cls.name if hasattr(cls, "name") else str(cls)
+            ln = cls_name.lower()
+            for jb in JAILBREAK_STRINGS:
+                if jb.lower() in ln:
+                    found.add(
+                        f"{jb} (ANTI_JAILBREAK_STRING, objc_class={cls_name})")
+
+    return sorted(found)
 
 
 def section_bytes_and_va(sect: lief.MachO.Section) -> Tuple[bytes, int]:
@@ -226,19 +285,19 @@ def parse_binaries(path: str) -> List[lief.MachO.Binary]:
     return binaries
 
 
-def scan_imports(binary: lief.MachO.Binary) -> list[str]:
-    print("[*] Scanning imports...")
-    imports = find_suspicious_imports(binary)
-    for i in imports:
-        print_red(f"[!] Suspicious import: {i}")
+def scan_symbols(binary: lief.MachO.Binary) -> list[str]:
+    print("[*] Scanning symbols...")
+    print("[*] Note: Strings might be encrypted, encoded or otherwise obfuscated.")
+    symbols = find_suspicious_symbols(binary)
+    for i in symbols:
+        print_red(f"[!] Suspicious symbol: {i}")
 
-    if not imports:
-        print("[*] No suspicious imports found. They might be resolved indirectly.")
+    if not symbols:
+        print("[*] No suspicious symbols found.")
     else:
-        print(
-            "[*] Use cross-references to check if these functions are used to detect a debugger.")
+        print("[*] Use cross-references to check if these symbols are actually harmful.")
 
-    return imports
+    return symbols
 
 
 def main():
@@ -275,8 +334,8 @@ def main():
             "binary": args.file,
             "cpu": b.header.cpu_type.name,
             "pie": b.is_pie,
-            "imports": scan_imports(b),
-            "brks": scan_brk_instructions(code_sections, args.verbose),
+            "imports": scan_symbols(b),
+            # "brks": scan_brk_instructions(code_sections, args.verbose),
             "syscalls": scan_syscalls(code_sections, syscall_map, args.verbose)
         }
         all_results.append(binary_info)
