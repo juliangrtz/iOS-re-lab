@@ -1,12 +1,15 @@
-# iOS-antiantidebug
+# iOS-antiantire
 
-Detects common anti-debugging techniques in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/) and [Capstone](http://www.capstone-engine.org/).
+Detects common anti-reverse-engineering techniques in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/) and [Capstone](http://www.capstone-engine.org/).
 
 ## Features
 
-- Syscall-based detections (ptrace, exit...)
+- Syscall detections (ptrace, exit...)
 - Suspicious imports (sysctl, dlsym, getppid...)
 - Timing / anti-breakpoint heuristics
+- TBD: Anti-Jailbreak (open/access/stat64, URL schemes, fork, symlinks, dyld...)
+- TBD: Anti-Frida (thread names, _dyld_image_count, _dyld_get_image_name, socket()...)
+- TBD: Integrity checks
 - TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
 - TBD: Network / IPC anti-debug checks (e.g. debugger processes via sockets)
 - TBD: String scanning
