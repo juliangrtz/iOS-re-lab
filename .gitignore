@@ -1,5 +1,8 @@
 target*
 out.json
+*.id*
+*.nam
+*.til
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
