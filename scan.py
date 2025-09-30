@@ -9,6 +9,9 @@ import lief
 from lief import MachO
 from capstone import *
 from capstone.arm64 import *
+import yara
+
+RULES_DIRECTORY = "rules"
 
 # increase this if syscall numbers aren't being detected correctly
 DISASM_CONTEXT_WINDOW = 40
@@ -20,6 +23,54 @@ SUSPICIOUS_IMPORTS = STRINGS["SUSPICIOUS_IMPORTS"]
 JAILBREAK_STRINGS = STRINGS["JAILBREAK_STRINGS"]
 
 lief.disable_leak_warning()
+
+
+def load_yara():
+    rule_files = []
+    for root, _, files in os.walk(RULES_DIRECTORY):
+        for f in files:
+            if f.endswith(".yara"):
+                rule_files.append(os.path.join(root, f))
+
+    if not rule_files:
+        print_yellow(f"[!] No YARA rules in '{RULES_DIRECTORY}' directory!")
+        return None
+
+    file_dict = {}
+    for i, path in enumerate(rule_files):
+        namespace = f"ns{i}"
+        file_dict[namespace] = path
+
+    try:
+        rules = yara.compile(filepaths=file_dict)
+        print(f"[*] Loaded {len(rule_files)} YARA rules.")
+        return rules
+    except Exception as e:
+        print_yellow(f"[!] Failed to compile YARA rules: {e}")
+        return None
+
+
+def scan_yara(rules, file_path: str):
+    if not rules:
+        return []
+
+    print("[*] Scanning for protectors...")
+    try:
+        matches = [r for r in rules.match(file_path) if r.rule != "is_mach_o"]
+
+        if not matches:
+            print("[*] Didn't find known protectors with YARA.")
+            return []
+
+        for m in matches:
+            print_red(
+                f"[!] YARA match")
+            print_red(f"    description: {m.meta["description"]}")
+            print_red(f"    url: {m.meta["url"]}")
+        return matches
+    except Exception as e:
+        print_yellow(f"[!] Error during YARA scan: {e}")
+        return []
 
 
 def is_aarch64_binary(bin: MachO.Binary) -> bool:
@@ -311,7 +362,7 @@ def main():
     args = ap.parse_args()
 
     if not os.path.isfile(args.file):
-        print_red("File does not exist:", args.file)
+        print_yellow("File does not exist:", args.file)
         sys.exit(2)
 
     syscall_map = {}
@@ -320,9 +371,10 @@ def main():
             with open(args.map, "r") as f:
                 syscall_map = json.load(f)
         except Exception as e:
-            print_red("Failed to load mapping JSON:", e)
+            print_yellow("Failed to load mapping JSON:", e)
 
     binaries = parse_binaries(args.file)
+    yara_rules = load_yara()
     all_results = []
     for b in binaries:
         print(
@@ -334,6 +386,7 @@ def main():
             "binary": args.file,
             "cpu": b.header.cpu_type.name,
             "pie": b.is_pie,
+            "yara_matches": [m.rule for m in scan_yara(yara_rules, args.file)],
             "imports": scan_symbols(b),
             # "brks": scan_brk_instructions(code_sections, args.verbose),
             "syscalls": scan_syscalls(code_sections, syscall_map, args.verbose)

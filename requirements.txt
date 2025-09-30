@@ -1,4 +1,5 @@
 lief
 capstone
 unicorn
+yara-python
 colorama

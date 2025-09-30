@@ -1,6 +1,6 @@
 # iOS-antiantire
 
-Detects common anti-reverse-engineering techniques in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/) and [Capstone](http://www.capstone-engine.org/).
+Detects common anti-reverse-engineering techniques and protectors in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/), [Capstone](http://www.capstone-engine.org/) and [YARA](https://github.com/VirusTotal/yara).
 
 ## Features
 
@@ -11,11 +11,11 @@ Detects common anti-reverse-engineering techniques in 64-bit Mach-O binaries. Ma
 - Emulator checks
 - Integrity checks
 - Frida checks
-- TBD: Commercial protector detection
-- TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
-- TBD: Network / IPC anti-debug checks (e.g. debugger processes via sockets)
-- TBD: String scanning
-- TBD: Heuristics for obfuscated or dynamically resolved syscalls
+- Protector detection using YARA
+- (WIP) Mach-O section anomalies (code in unusual sections, encrypted sections)
+- (WIP) Network / IPC anti-debug checks (e.g. debugger processes via sockets)
+- (WIP) String scanning
+- (WIP) Heuristics for obfuscations
 
 ## Requirements
 
@@ -38,6 +38,7 @@ python scan.py target --out results.json
 
 ```plain
 [*] Analysis started: cpu=ARM64, imagebase=0x100000000, pie=True
+
 [*] Scanning symbols...
 [*] Note: Strings might be encrypted, encoded or otherwise obfuscated.
 [!] Suspicious symbol: /bin/bash (ANTI_JAILBREAK_STRING, section=__const)

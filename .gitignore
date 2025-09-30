@@ -3,6 +3,7 @@ out.json
 *.id*
 *.nam
 *.til
+*.i64
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
