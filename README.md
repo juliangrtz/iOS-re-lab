@@ -9,8 +9,8 @@ Detects common anti-reverse-engineering techniques in 64-bit Mach-O binaries. Ma
 - Suspicious imports (sysctl, dlsym, getppid...)
 - Timing / anti-breakpoint heuristics
 - Emulator checks
-- TBD: Anti-Frida (thread names, _dyld_image_count, _dyld_get_image_name, socket()...)
-- TBD: Integrity checks
+- Integrity checks
+- Frida checks
 - TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
 - TBD: Network / IPC anti-debug checks (e.g. debugger processes via sockets)
 - TBD: String scanning

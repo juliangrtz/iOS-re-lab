@@ -1,5 +1,27 @@
 {
   "SUSPICIOUS_IMPORTS": {
+    "INTEGRITY": [
+      "CC_SHA1_Init",
+      "CC_SHA1_Update",
+      "CC_SHA1_Final",
+      "CC_SHA1",
+      "CC_SHA224_Init",
+      "CC_SHA224_Update",
+      "CC_SHA224_Final",
+      "CC_SHA224",
+      "CC_SHA256_Init",
+      "CC_SHA256_Update",
+      "CC_SHA256_Final",
+      "CC_SHA256",
+      "CC_SHA384_Init",
+      "CC_SHA384_Update",
+      "CC_SHA384_Final",
+      "CC_SHA384",
+      "CC_SHA512_Init",
+      "CC_SHA512_Update",
+      "CC_SHA512_Final",
+      "CC_SHA512"
+    ],
     "MACH_TASK_AND_VM": [
       "vm_region_64",
       "vm_deallocate",
@@ -56,7 +78,7 @@
     "LIBC_POSIX": [
       "open",
       "openat",
-      "creat",
+      "create",
       "read",
       "write",
       "pread",
@@ -94,7 +116,6 @@
       "statvfs",
       "statvs",
       "getfsstat"
-
     ],
     "DYLD_ENV_AND_ENVIRON": [
       "getenv",
@@ -150,7 +171,27 @@
       "inet_aton"
     ]
   },
+  "FRIDA": [
+    "/usr/sbin/frida-server",
+    "FridaGadget",
+    "frida",
+    "gum-js-loop",
+    "gmain",
+    "linjector",
+    "pool-frida",
+    "frida_agent_main",
+    "re.frida.server",
+    "frida-agent",
+    "frida-helper"
+  ],
   "JAILBREAK_STRINGS": [
+    "destinationOfSymbolicLinkAtPath:",
+    "canOpenURL:",
+    "cydia://",
+    "undecimus://",
+    "sileo://",
+    "zbra://",
+    "filza://",
     "systemhook.dylib",
     "roothideinit.dylib",
     "SubstrateLoader.dylib",
@@ -178,13 +219,11 @@
     "Electra",
     "AppSyncUnified-FrontBoard.dylib",
     "Shadow",
-    "FridaGadget",
-    "frida",
+    "ShadowRuleset",
     "libcycript",
     "/var/mobile/Library/Preferences/ABPattern",
     "/usr/lib/ABDYLD.dylib",
     "/usr/lib/ABSubLoader.dylib",
-    "/usr/sbin/frida-server",
     "/etc/apt/sources.list.d/electra.list",
     "/etc/apt/sources.list.d/sileo.sources",
     "/.bootstrapped_electra",
@@ -267,5 +306,8 @@
     "iPhone Simulator",
     "SIMULATOR_DEVICE_NAME",
     "SIMULATOR_MODEL_IDENTIFIER"
+  ],
+  "LOCKDOWN": [
+    "LDMGlobalEnabled"
   ]
 }
