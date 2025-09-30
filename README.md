@@ -38,7 +38,10 @@ python scan.py target --out results.json
 
 ```plain
 [*] Analysis started: cpu=ARM64, imagebase=0x100000000, pie=True
-
+[*] Scanning for protectors...
+[!] YARA match
+    description: Promon SHIELD (commercial)
+    url: https://promon.io/products/mobile
 [*] Scanning symbols...
 [*] Note: Strings might be encrypted, encoded or otherwise obfuscated.
 [!] Suspicious symbol: /bin/bash (ANTI_JAILBREAK_STRING, section=__const)
