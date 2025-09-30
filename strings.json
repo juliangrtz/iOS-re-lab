@@ -1,6 +1,8 @@
 {
   "SUSPICIOUS_IMPORTS": {
     "MACH_TASK_AND_VM": [
+      "vm_region_64",
+      "vm_deallocate",
       "mach_task_self",
       "task_for_pid",
       "task_info",
@@ -51,21 +53,6 @@
       "dlinfo",
       "dlopen_preflight"
     ],
-    "OBJC_RUNTIME": [
-      "objc_getClass",
-      "objc_getClassList",
-      "objc_getMetaClass",
-      "objc_msgSend",
-      "objc_msgSendSuper",
-      "class_getName",
-      "class_getSuperclass",
-      "method_exchangeImplementations",
-      "method_getImplementation",
-      "method_setImplementation",
-      "objc_registerClassPair",
-      "objc_allocateClassPair",
-      "objc_disposeClassPair"
-    ],
     "LIBC_POSIX": [
       "open",
       "openat",
@@ -103,7 +90,11 @@
       "fork",
       "execve",
       "posix_spawn",
-      "system"
+      "system",
+      "statvfs",
+      "statvs",
+      "getfsstat"
+
     ],
     "DYLD_ENV_AND_ENVIRON": [
       "getenv",
@@ -120,7 +111,6 @@
       "getpwnam",
       "getuid",
       "geteuid",
-      "access",
       "statfs",
       "getfsstat"
     ],
@@ -271,5 +261,11 @@
     "/Library/MobileSubstrate/MobileSubstrate.dylib",
     "/etc/apt",
     "/var/log/apt"
+  ],
+  "EMULATOR_STRINGS": [
+    "processInfo",
+    "iPhone Simulator",
+    "SIMULATOR_DEVICE_NAME",
+    "SIMULATOR_MODEL_IDENTIFIER"
   ]
 }

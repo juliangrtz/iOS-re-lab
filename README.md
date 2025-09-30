@@ -4,9 +4,11 @@ Detects common anti-reverse-engineering techniques in 64-bit Mach-O binaries. Ma
 
 ## Features
 
+- Anti-Jailbreak (open/access/stat64, URL schemes, fork, symlinks, dyld...)
 - Syscall detections (ptrace, exit...)
 - Suspicious imports (sysctl, dlsym, getppid...)
-- Anti-Jailbreak (open/access/stat64, fork, symlinks, dyld...)
+- Timing / anti-breakpoint heuristics
+- Emulator checks
 - TBD: Anti-Frida (thread names, _dyld_image_count, _dyld_get_image_name, socket()...)
 - TBD: Integrity checks
 - TBD: Mach-O section anomalies (code in unusual sections, encrypted sections)
