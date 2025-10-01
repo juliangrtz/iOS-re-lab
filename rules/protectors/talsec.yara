@@ -13,5 +13,5 @@ rule TALSEC : protector
         $s3 = "TalsecConfig" ascii
 
     condition:
-        is_mach_o and ( 1 of ($s1, $s2, $s3) )
+        is_mach_o and ( 1 of ($s*) )
 }

@@ -4,6 +4,8 @@ out.json
 *.nam
 *.til
 *.i64
+IPAs/
+libs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

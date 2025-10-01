@@ -72,6 +72,13 @@ python scan.py target --out results.json
 
 ## Roadmap
 
+- Handle obfuscated syscalls. Unicorn emulation might be necessary. Example:
+
+```arm
+ldr x16, [sp, #0x288]
+svc 0x80
+```
+
 - Output IDA-friendly addresses instead of file offsets
 - Offer automatic patches (NOP, RET etc.)
 - Add more detections

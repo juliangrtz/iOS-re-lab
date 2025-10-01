@@ -13,5 +13,5 @@ rule PROMON_SHIELD : protector
         $s3 = "PRMShieldConfig" ascii
 
     condition:
-        is_mach_o and ( 1 of ($s1, $s2, $s3) )
+        is_mach_o and ( 1 of ($s*) )
 }

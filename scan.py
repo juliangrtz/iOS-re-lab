@@ -180,7 +180,7 @@ def section_bytes_and_va(sect: lief.MachO.Section) -> Tuple[bytes, int]:
 
 def get_svc_number(ctx: List[Dict]) -> int | None:
     result = None
-    syscall_number_regex = r"x16, #(?:0[xX][0-9a-fA-F]+|\d+)"
+    syscall_number_regex = r"(x|w)16, #(?:0[xX][0-9a-fA-F]+|\d+)"
 
     for insn in ctx[::-1]:
         mnemonic = insn.get("mnemonic", "")
