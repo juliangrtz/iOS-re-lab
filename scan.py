@@ -93,11 +93,13 @@ def scan_yara(rules, file_path: str):
             confidence = meta.get("confidence")
             desc = meta.get("description", "<no description>")
             url = meta.get("url", "<no url>")
+            info_urls = [v for k, v in meta.items() if k.startswith("info")]
 
             print_red("[!] YARA match")
             print_red(f"    confidence: {confidence}")
             print_red(f"    description: {desc}")
             print_red(f"    url: {url}")
+            print_red(f"    info: {', '.join(info_urls)}")
 
         return kept
 

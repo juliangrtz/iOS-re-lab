@@ -8,6 +8,7 @@ rule DIGITAL_AI : protector
         url = "https://digital.ai/products/application-security/"
         author = "Eduardo Novella"
         confidence = "25%"
+        info = "https://www.romainthomas.fr/post/22-08-ios-obfuscation/"
 
     strings:
         $m1 = { 10 62 (6? | 75) [14] 00 }

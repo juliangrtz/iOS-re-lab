@@ -7,7 +7,9 @@ rule PROMON_SHIELD : protector
         url = "https://promon.io/products/mobile"
         author = "juliangrtz"
         confidence = "100%"
-        
+        info1 = "https://www.researchgate.net/publication/325640295_Honey_I_Shrunk_Your_App_Security_The_State_of_Android_App_Hardening"
+        info2 = "https://github.com/KiFilterFiberContext/promon-reversal"
+
     strings:
         $s1 = "no.promon.shield" nocase
         $s2 = "/release/shield/dist/" ascii
