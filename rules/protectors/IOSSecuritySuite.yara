@@ -6,6 +6,7 @@ rule IOSSecuritySuite : protector
         description = "iOS Security Suite (open-source)"
         url = "https://github.com/securing/IOSSecuritySuite"
         author = "juliangrtz"
+        confidence = "100%"
 
     strings:
         $s1 = "IOSSecuritySuite" nocase

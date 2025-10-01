@@ -1,11 +1,13 @@
 include "../common.yara"
 
+// Not reliable. Must be revised.
 rule DIGITAL_AI : protector
 {
     meta:
         description = "Digital.ai, formerly Arxan (commercial)"
         url = "https://digital.ai/products/application-security/"
         author = "Eduardo Novella"
+        confidence = "25%"
 
     strings:
         $m1 = { 10 62 (6? | 75) [14] 00 }

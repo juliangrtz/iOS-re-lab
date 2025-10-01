@@ -62,12 +62,45 @@ def scan_yara(rules, file_path: str):
             print("[*] Didn't find known protectors with YARA.")
             return []
 
+        def _parse_confidence(val):
+            if val is None:
+                return None
+            try:
+                if isinstance(val, str):
+                    s = val.strip()
+                    if s.endswith("%"):
+                        s = s[:-1]
+                    return int(float(s))
+                return int(float(val))
+            except Exception:
+                return None
+
+        matches_with_confidence = []
         for m in matches:
-            print_red(
-                f"[!] YARA match")
-            print_red(f"    description: {m.meta["description"]}")
-            print_red(f"    url: {m.meta["url"]}")
-        return matches
+            meta = getattr(m, "meta", {}) or {}
+            confidence = _parse_confidence(meta.get("confidence"))
+            matches_with_confidence.append((m, confidence))
+
+        safe_matches = [m for m, c in matches_with_confidence if c == 100]
+
+        if safe_matches:
+            kept = safe_matches
+        else:
+            kept = matches
+
+        for m in kept:
+            meta = getattr(m, "meta", {}) or {}
+            confidence = meta.get("confidence")
+            desc = meta.get("description", "<no description>")
+            url = meta.get("url", "<no url>")
+
+            print_red("[!] YARA match")
+            print_red(f"    confidence: {confidence}")
+            print_red(f"    description: {desc}")
+            print_red(f"    url: {url}")
+
+        return kept
+
     except Exception as e:
         print_yellow(f"[!] Error during YARA scan: {e}")
         return []
