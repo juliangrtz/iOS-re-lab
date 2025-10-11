@@ -387,7 +387,7 @@ def scan_symbols(binary: lief.MachO.Binary) -> list[str]:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Mach-O AArch64 syscall scanner")
+    ap = argparse.ArgumentParser(description="iOS-antiantire")
     ap.add_argument("file", help="Mach-O binary path")
     ap.add_argument("--map", help="Optional JSON mapping for syscalls. Uses syscalls.json by default.",
                     default="syscalls.json")
