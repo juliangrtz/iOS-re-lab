@@ -9,7 +9,7 @@ from ui.main_window import MainWindow
 
 
 # noinspection PyUnresolvedReferences
-def set_windows_taskbar_icon():
+def set_windows_taskbar_icon(icon_path):
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
             "com.juliangrtz.ios-re-lab"
@@ -26,7 +26,7 @@ def main():
     app.setWindowIcon(QIcon(icon_path))
 
     if sys.platform.startswith("win"):
-        set_windows_taskbar_icon()
+        set_windows_taskbar_icon(icon_path)
 
     window = MainWindow()
     window.show()
