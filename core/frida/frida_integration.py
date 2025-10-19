@@ -107,7 +107,6 @@ class FridaManager:
         try:
             d = self._get_device_obj(device_id)
             sess = d.attach(pid)
-            terminal.info(f"attached to pid {pid}")
             return sess
         except Exception as e:
             terminal.error(f"attach error: {e}\n{traceback.format_exc()}")

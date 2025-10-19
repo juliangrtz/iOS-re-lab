@@ -93,4 +93,5 @@ svc 0x80
 - Offer automatic patches
 - Add more detections
 - Support ARM32?
+- Localization
 - ...

@@ -36,7 +36,7 @@ class EmittingStream:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("iOS reverse engineering laboratory")
+        self.setWindowTitle(f"iOS reverse engineering laboratory v{VERSION}")
         self.setWindowIcon(QIcon("img/apple.ico"))
 
         screen = QGuiApplication.primaryScreen().availableGeometry()
@@ -78,11 +78,21 @@ class MainWindow(QMainWindow):
 
     def _load_dock_tabs(self):
         self.docks["Frida"] = self._add_dock_tab(
-            "Frida", FridaTab(), int(self.width() / 2), 0, area=Qt.DockWidgetArea.LeftDockWidgetArea)
+            "Frida",
+            FridaTab(),
+            width=int(self.width() / 2),
+            area=Qt.DockWidgetArea.LeftDockWidgetArea
+        )
         self.docks["Scanner"] = self._add_dock_tab(
-            "Scanner", ScannerTab(), int(self.width() / 2), 0, area=Qt.DockWidgetArea.RightDockWidgetArea)
+            "Scanner",
+            ScannerTab(),
+            width=int(self.width() / 2),
+            area=Qt.DockWidgetArea.RightDockWidgetArea
+        )
         self.docks["Log"] = self._add_dock_tab(
-            "Log", self._create_output_widget(), 0, 400,
+            "Log",
+            self._create_output_widget(),
+            height=400,
             area=Qt.DockWidgetArea.BottomDockWidgetArea
         )
 
@@ -90,8 +100,8 @@ class MainWindow(QMainWindow):
         self,
         name: str,
         widget: QWidget,
-        width: int,
-        height: int,
+        width: int = 0,
+        height: int = 0,
         area=Qt.DockWidgetArea.RightDockWidgetArea
     ) -> QDockWidget:
         dock = QDockWidget(name, self)
@@ -111,7 +121,8 @@ class MainWindow(QMainWindow):
         text_edit = QTextEdit()
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
-            "background-color: black; color: lightgreen; font-family: monospace;")
+            "background-color: black; color: lightgreen; font-family: monospace;"
+        )
 
         sys.stdout = EmittingStream(text_edit)
         sys.stderr = EmittingStream(text_edit)
