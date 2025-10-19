@@ -15,7 +15,7 @@ class FridaTab(QWidget):
         self.current_device_id = None
         self.selected_app_identifier = None
 
-        self.layout = QVBoxLayout(self)
+        self.qvBoxLayout = QVBoxLayout(self)
         self.label = QLabel(
             f"🧪 Frida (v{self.frida.get_frida_version()})\nClick on a device to enumerate its applications.")
         header_layout = QHBoxLayout()
@@ -26,7 +26,7 @@ class FridaTab(QWidget):
         self.refresh_devices_btn.clicked.connect(self.refresh_devices)
         header_layout.addWidget(self.refresh_devices_btn)
 
-        self.layout.addLayout(header_layout)
+        self.qvBoxLayout.addLayout(header_layout)
 
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Type", "Info"])
@@ -46,8 +46,8 @@ class FridaTab(QWidget):
         btn_layout.addWidget(self.spawn_btn)
         btn_layout.addWidget(self.attach_btn)
 
-        self.layout.addWidget(self.tree)
-        self.layout.addLayout(btn_layout)
+        self.qvBoxLayout.addWidget(self.tree)
+        self.qvBoxLayout.addLayout(btn_layout)
 
         self.refresh_devices()
 
@@ -72,7 +72,7 @@ class FridaTab(QWidget):
                 name = d.get("name") or id_
                 type_ = d.get("type")
                 dev_item = QTreeWidgetItem([f"{type_}", f"{name} (id={id_})"])
-                dev_item.setData(0, Qt.UserRole, {
+                dev_item.setData(0, Qt.ItemDataRole.UserRole, {
                                  "type": "device", "device_id": id_})
 
                 icon_bytes = d.get("icon")  # always seems to be None ＞︿＜
@@ -89,7 +89,7 @@ class FridaTab(QWidget):
             QMessageBox.critical(self, "Unexpected error", str(e))
 
     def _on_item_clicked(self, item, column):
-        meta = item.data(0, Qt.UserRole)
+        meta = item.data(0, Qt.ItemDataRole.UserRole)
         if meta and meta.get("type") == "device":
             device_id = meta.get("device_id")
             self._populate_apps_for_device(item, device_id)
@@ -125,7 +125,7 @@ class FridaTab(QWidget):
                 if pid:
                     info += f" (pid={pid})"
                 app_item = QTreeWidgetItem([identifier, info])
-                app_item.setData(0, Qt.UserRole, {
+                app_item.setData(0, Qt.ItemDataRole.UserRole, {
                                  "type": "app", "device_id": device_id, "identifier": identifier, "pid": pid})
                 device_item.addChild(app_item)
 
@@ -148,6 +148,9 @@ class FridaTab(QWidget):
             terminal.info(
                 f"Spawned {self.selected_app_identifier} -> pid={pid}")
             try:
+                if not pid:
+                    raise FridaError("Could not get pid {pid}")
+
                 self.frida.resume(self.current_device_id, pid)
                 terminal.info(f"Resumed pid {pid}")
             except Exception as e:
@@ -157,7 +160,7 @@ class FridaTab(QWidget):
 
     def _on_attach_clicked(self):
         pid_text, ok = QInputDialog.getText(
-            self, "Attach", "Enter PID to attach (or leave blank to attach to selected app pid):", QLineEdit.Normal, "")
+            self, "Attach", "Enter PID to attach (or leave blank to attach to selected app pid):", QLineEdit.EchoMode.Normal, "")
         if not ok:
             return
         pid = None
@@ -169,7 +172,7 @@ class FridaTab(QWidget):
                 return
 
         sel = self.tree.currentItem()
-        meta = sel.data(0, Qt.UserRole) if sel else None
+        meta = sel.data(0, Qt.ItemDataRole.UserRole) if sel else None
         if pid is None and meta and meta.get("type") == "app":
             pid = meta.get("pid")
         if pid is None:
@@ -178,6 +181,8 @@ class FridaTab(QWidget):
             return
 
         try:
+            if not self.current_device_id:
+                raise FridaError("Current device ID not set")
             session = self.frida.attach(self.current_device_id, pid)
             terminal.info(f"Attached to pid {pid}: {session}")
             # TODO handle session

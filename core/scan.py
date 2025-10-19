@@ -406,6 +406,7 @@ class MachOScanner:
             warn(f"Suspicious symbol: {s}")
         if not symbols:
             info("No suspicious symbols found.")
+            return []
         else:
             info("Use Xrefs to check them.")
             return symbols
@@ -413,6 +414,7 @@ class MachOScanner:
     # ---------------------------
     # High-level analysis
     # ---------------------------
+
     def analyze(
         self,
         file_path: str,

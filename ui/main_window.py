@@ -54,19 +54,19 @@ class MainWindow(QMainWindow):
 
     def _load_dock_tabs(self):
         self.docks["Frida"] = self._add_dock_tab(
-            "Frida", FridaTab(), int(self.width() / 2), area=Qt.LeftDockWidgetArea)
+            "Frida", FridaTab(), int(self.width() / 2), area=Qt.DockWidgetArea.LeftDockWidgetArea)
         self.docks["Scanner"] = self._add_dock_tab(
-            "Scanner", ScannerTab(), int(self.width() / 2), area=Qt.RightDockWidgetArea)
+            "Scanner", ScannerTab(), int(self.width() / 2), area=Qt.DockWidgetArea.RightDockWidgetArea)
 
-    def _add_dock_tab(self, name: str, widget: QWidget, width: int, area=Qt.RightDockWidgetArea) -> QDockWidget:
+    def _add_dock_tab(self, name: str, widget: QWidget, width: int, area=Qt.DockWidgetArea.RightDockWidgetArea) -> QDockWidget:
         dock = QDockWidget(name, self)
         dock.setWidget(widget)
         dock.setMinimumWidth(width)
         dock.setFloating(False)
         dock.setFeatures(
-            QDockWidget.DockWidgetClosable |
-            QDockWidget.DockWidgetMovable |
-            QDockWidget.DockWidgetFloatable
+            QDockWidget.DockWidgetFeature.DockWidgetClosable |
+            QDockWidget.DockWidgetFeature.DockWidgetMovable |
+            QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
         self.addDockWidget(area, dock)
         return dock

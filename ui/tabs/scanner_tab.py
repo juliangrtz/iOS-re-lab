@@ -8,7 +8,7 @@ from core.scan import MachOScanner
 class ScannerTab(QWidget):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self)
+        self.qvBoxLayout = QVBoxLayout(self)
 
         header_layout = QHBoxLayout()
         self.label = QLabel("🔍 Mach-O Scanner")
@@ -28,9 +28,9 @@ class ScannerTab(QWidget):
         self.scan_button.clicked.connect(self._on_scan_clicked)
         self.scan_button.setEnabled(False)
 
-        self.layout.addLayout(header_layout)
-        self.layout.addWidget(self.scan_button)
-        self.layout.addWidget(self.tree)
+        self.qvBoxLayout.addLayout(header_layout)
+        self.qvBoxLayout.addWidget(self.scan_button)
+        self.qvBoxLayout.addWidget(self.tree)
 
         self.setAcceptDrops(True)
 
@@ -81,6 +81,9 @@ class ScannerTab(QWidget):
         self._run_scan()
 
     def _run_scan(self):
+        if not self.file_path:
+            return
+
         self.scan_button.setEnabled(False)
         self.tree.clear()
         status_root = QTreeWidgetItem(["Status", "Scanning..."])
