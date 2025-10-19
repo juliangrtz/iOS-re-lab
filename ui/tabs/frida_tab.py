@@ -1,11 +1,12 @@
+import json
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem,
-    QHBoxLayout, QMessageBox, QInputDialog, QLineEdit
+    QHBoxLayout, QMessageBox, QInputDialog, QLineEdit, QFileDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 from core import terminal
-from core.frida_integration import FridaManager, FridaError
+from core.frida.frida_integration import FridaManager, FridaError
 
 
 class FridaTab(QWidget):
@@ -35,11 +36,11 @@ class FridaTab(QWidget):
         self.tree.itemClicked.connect(self._on_item_clicked)
 
         btn_layout = QHBoxLayout()
-        self.spawn_btn = QPushButton("Spawn Selected App")
+        self.spawn_btn = QPushButton("Spawn and inject script")
         self.spawn_btn.setEnabled(False)
         self.spawn_btn.clicked.connect(self._on_spawn_clicked)
 
-        self.attach_btn = QPushButton("Attach to PID...")
+        self.attach_btn = QPushButton("Attach and inject script")
         self.attach_btn.setEnabled(False)
         self.attach_btn.clicked.connect(self._on_attach_clicked)
 
@@ -144,27 +145,49 @@ class FridaTab(QWidget):
         try:
             res = self.frida.spawn_app(
                 self.current_device_id, self.selected_app_identifier)
-            pid = res.get("pid")
+            pid = res.get("pid") if isinstance(res, dict) else None
             terminal.info(
                 f"Spawned {self.selected_app_identifier} -> pid={pid}")
-            try:
-                if not pid:
-                    raise FridaError("Could not get pid {pid}")
+            if not pid:
+                raise FridaError(
+                    f"Could not get pid for {self.selected_app_identifier}")
 
+            try:
+                session = self.frida.attach(self.current_device_id, pid)
+                terminal.info(f"Attached to spawned pid {pid}: {session}")
+            except Exception as e:
+                terminal.warn(f"Failed to attach to spawned pid {pid}: {e}")
+                try:
+                    self.frida.resume(self.current_device_id, pid)
+                    terminal.info(f"Resumed pid {pid} (after failed attach)")
+                except Exception as e2:
+                    terminal.warn(f"Could not resume pid {pid}: {e2}")
+                raise
+
+            try:
+                self._inject_script(session)
+            except Exception as e:
+                terminal.warn(f"Script injection failed for pid {pid}: {e}")
+
+            try:
                 self.frida.resume(self.current_device_id, pid)
                 terminal.info(f"Resumed pid {pid}")
             except Exception as e:
                 terminal.warn(f"Could not resume pid {pid}: {e}")
+
         except FridaError as e:
             QMessageBox.critical(self, "Spawn failed", str(e))
+        except Exception as e:
+            QMessageBox.critical(self, "Spawn error", str(e))
 
     def _on_attach_clicked(self):
         pid_text, ok = QInputDialog.getText(
-            self, "Attach", "Enter PID to attach (or leave blank to attach to selected app pid):", QLineEdit.EchoMode.Normal, "")
+            self, "Attach", "Enter PID to attach (or leave blank to attach to selected app pid):",
+            QLineEdit.EchoMode.Normal, "")
         if not ok:
             return
         pid = None
-        if pid_text.strip():
+        if pid_text and pid_text.strip():
             try:
                 pid = int(pid_text.strip())
             except ValueError:
@@ -185,6 +208,63 @@ class FridaTab(QWidget):
                 raise FridaError("Current device ID not set")
             session = self.frida.attach(self.current_device_id, pid)
             terminal.info(f"Attached to pid {pid}: {session}")
-            # TODO handle session
+            try:
+                self._inject_script(session)
+            except Exception as e:
+                terminal.warn(f"Script injection failed after attach: {e}")
         except FridaError as e:
             QMessageBox.critical(self, "Attach failed", str(e))
+        except Exception as e:
+            QMessageBox.critical(self, "Attach error", str(e))
+
+    def _inject_script(self, session):
+        if session is None:
+            QMessageBox.warning(self, "No session",
+                                "No Frida session available to inject the script.")
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select script", "", "JavaScript file (*.js)")
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, mode="r", encoding="utf-8") as script:
+                with open("core/frida/common.js", mode="r", encoding="utf-8") as common:
+                    js_source = script.read() + "\n" + common.read()
+        except Exception as e:
+            QMessageBox.critical(self, "File error",
+                                 f"Could not read file: {e}")
+            return
+
+        try:
+            script = session.create_script(js_source)
+
+            def on_message(message, data):
+                try:
+                    if isinstance(message, dict):
+                        mtype = message.get("type")
+                        payload = message.get("payload")
+                        if mtype == "send":
+                            if isinstance(payload, (dict, list)):
+                                terminal.info(f"[frida] {json.dumps(payload)}")
+                            else:
+                                terminal.info(f"[frida] {payload}")
+                        elif mtype == "error":
+                            terminal.error(f"[frida error] {payload}")
+                        else:
+                            terminal.info(f"[frida msg] {message}")
+                    else:
+                        terminal.info(f"[frida] {message}")
+                except Exception as ex:
+                    terminal.warn(f"Error in on_message handler: {ex}")
+
+            script.on("message", on_message)
+
+            script.load()
+            terminal.info(f"Injected script from {file_path}")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Injection failed",
+                                 f"Could not inject script: {e}")
+            raise
