@@ -2,6 +2,8 @@ lief
 capstone
 unicorn
 yara-python
+frida
+frida-tools
 colorama
 pytest
 pyside6
