@@ -1,20 +1,20 @@
-from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QMessageBox, QWidget, QTextEdit
-)
-from PySide6.QtGui import QIcon, QAction, QGuiApplication, QTextCursor
-from PySide6.QtCore import Qt
-
-from core.constants import VERSION
-from ui.tabs.scanner_tab import ScannerTab
-from ui.tabs.frida_tab import FridaTab
-
 import sys
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QAction, QGuiApplication, QTextCursor
+from PySide6.QtWidgets import (
+    QMainWindow, QDockWidget, QMessageBox, QWidget
+)
 from PySide6.QtWidgets import QTextEdit
 from ansi2html import Ansi2HTMLConverter
 
+from core.constants import VERSION
+from ui.tabs.frida_tab import FridaTab
+from ui.tabs.scanner_tab import ScannerTab
+
 
 class EmittingStream:
-    ansiConverter = Ansi2HTMLConverter()
+    ansiConverter = Ansi2HTMLConverter(inline=True)
 
     def __init__(self, text_widget: QTextEdit):
         self.text_widget = text_widget
@@ -97,12 +97,12 @@ class MainWindow(QMainWindow):
         )
 
     def _add_dock_tab(
-        self,
-        name: str,
-        widget: QWidget,
-        width: int = 0,
-        height: int = 0,
-        area=Qt.DockWidgetArea.RightDockWidgetArea
+            self,
+            name: str,
+            widget: QWidget,
+            width: int = 0,
+            height: int = 0,
+            area=Qt.DockWidgetArea.RightDockWidgetArea
     ) -> QDockWidget:
         dock = QDockWidget(name, self)
         dock.setWidget(widget)
@@ -120,8 +120,9 @@ class MainWindow(QMainWindow):
     def _create_output_widget(self) -> QTextEdit:
         text_edit = QTextEdit()
         text_edit.setReadOnly(True)
+        text_edit.acceptRichText()
         text_edit.setStyleSheet(
-            "background-color: black; color: lightgreen; font-family: monospace;"
+            "background-color: black; font-family: monospace;"
         )
 
         sys.stdout = EmittingStream(text_edit)

@@ -1,13 +1,16 @@
 from __future__ import annotations
+
+import json
 import os
 import re
-import json
 from typing import List, Dict, Tuple, Optional, Callable, Any
+
 import lief
-from lief import MachO
+import yara
 from capstone import Cs, CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN
 from capstone.arm64 import ARM64_INS_SVC
-import yara
+from lief import MachO
+
 from .terminal import *
 
 LoggerType = Callable[[str, str, object | None], None]
@@ -24,11 +27,11 @@ class MachOScanner:
     DISASM_CONTEXT_WINDOW = 40
 
     def __init__(
-        self,
-        strings_path: Optional[str] = "data/strings.json",
-        strings_dict: Optional[Dict[str, Any]] = None,
-        rules_dir: str = "rules",
-        disasm_context_window: Optional[int] = None,
+            self,
+            strings_path: Optional[str] = "data/strings.json",
+            strings_dict: Optional[Dict[str, Any]] = None,
+            rules_dir: str = "rules",
+            disasm_context_window: Optional[int] = None,
     ):
         self.rules_dir = rules_dir
         self.yara_rules = None
@@ -284,7 +287,7 @@ class MachOScanner:
                     entry = {
                         "section": sect.name,
                         "address": hex(sect.offset + i) if hasattr(sect, "offset") else hex(base_va + i),
-                        "bytes": f"0x{sec_bytes[i:i+4].hex()}",
+                        "bytes": f"0x{sec_bytes[i:i + 4].hex()}",
                     }
                     results.append(entry)
                     warn(f"BRK @ {entry['address']}")
@@ -300,7 +303,8 @@ class MachOScanner:
             info("No BRK instructions found.")
         return results
 
-    def disasm(self, sec_bytes: bytes, base_va: int, section_offset: int, syscall_map: Dict[str, str], verbose: bool) -> List[Dict]:
+    def disasm(self, sec_bytes: bytes, base_va: int, section_offset: int, syscall_map: Dict[str, str], verbose: bool) -> \
+            List[Dict]:
         cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
         cs.detail = True
         length = len(sec_bytes)
@@ -416,12 +420,12 @@ class MachOScanner:
     # ---------------------------
 
     def analyze(
-        self,
-        file_path: str,
-        syscall_map_path: Optional[str] = "data/syscalls.json",
-        out_path: Optional[str] = None,
-        verbose: bool = False,
-        run_yara: bool = True,
+            self,
+            file_path: str,
+            syscall_map_path: Optional[str] = "data/syscalls.json",
+            out_path: Optional[str] = None,
+            verbose: bool = False,
+            run_yara: bool = True,
     ) -> List[Dict]:
         """
         Analyzes the Mach-O file and yields findings.
@@ -491,6 +495,7 @@ class MachOScanner:
 
 if __name__ == "__main__":
     import argparse
+
     ap = argparse.ArgumentParser(description="MachOScanner")
     ap.add_argument("file", help="Mach-O path")
     ap.add_argument("--map", default="data/syscalls.json",

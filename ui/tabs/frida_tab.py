@@ -1,15 +1,17 @@
 import json
 import os
 from typing import Tuple
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem,
     QHBoxLayout, QMessageBox, QInputDialog, QLineEdit, QFileDialog
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
+from frida.core import Session
+
 from core import terminal
 from core.frida.frida_integration import FridaManager, FridaError
-from frida.core import Session
 
 COMPILED_SVC_TRACER = False
 
@@ -86,7 +88,7 @@ class FridaTab(QWidget):
                 type_ = d.get("type")
                 dev_item = QTreeWidgetItem([f"{type_}", f"{name} (id={id_})"])
                 dev_item.setData(0, Qt.ItemDataRole.UserRole, {
-                                 "type": "device", "device_id": id_})
+                    "type": "device", "device_id": id_})
 
                 icon_bytes = d.get("icon")  # always seems to be None ＞︿＜
                 if icon_bytes:
@@ -101,7 +103,7 @@ class FridaTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Unexpected error", str(e))
 
-    def _on_item_clicked(self, item, column):
+    def _on_item_clicked(self, item, _):
         meta = item.data(0, Qt.ItemDataRole.UserRole)
         if meta and meta.get("type") == "device":
             device_id = meta.get("device_id")
@@ -140,7 +142,7 @@ class FridaTab(QWidget):
                     info += f" (pid={pid})"
                 app_item = QTreeWidgetItem([identifier, info])
                 app_item.setData(0, Qt.ItemDataRole.UserRole, {
-                                 "type": "app", "device_id": device_id, "identifier": identifier, "pid": pid})
+                    "type": "app", "device_id": device_id, "identifier": identifier, "pid": pid})
                 device_item.addChild(app_item)
 
             device_item.setExpanded(True)
@@ -233,7 +235,7 @@ class FridaTab(QWidget):
             file_path, _ = QFileDialog.getOpenFileName(
                 self, "Select script", "", "JavaScript file (*.js)")
             if not file_path:
-                return
+                raise
             with open(file_path, mode="r", encoding="utf-8") as script:
                 with open("core/frida/common.js", mode="r", encoding="utf-8") as common:
                     return script.read() + "\n" + common.read()
@@ -251,7 +253,7 @@ class FridaTab(QWidget):
         try:
             script = session.create_script(script)
 
-            def on_message(message, data):
+            def on_message(message, _):
                 try:
                     if isinstance(message, dict):
                         mtype = message.get("type")

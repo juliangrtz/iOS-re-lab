@@ -1,6 +1,5 @@
 lief
 capstone
-unicorn
 yara-python
 frida
 frida-tools

@@ -1,5 +1,6 @@
-from typing import List, Dict
 import traceback
+from typing import List, Dict
+
 import frida
 
 from core import terminal

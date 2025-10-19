@@ -1,8 +1,8 @@
 import os
+
 import pytest
 
 from core.scan import MachOScanner
-
 
 SAMPLE_PATH = os.path.join(os.path.dirname(
     __file__), "binaries", "IOSSecuritySuite")
@@ -37,9 +37,6 @@ def test_scan_real_macho():
     }
 
     logs = []
-
-    def logger(msg, level="info"):
-        logs.append((level, msg))
 
     scanner = MachOScanner(strings_dict=strings)
 

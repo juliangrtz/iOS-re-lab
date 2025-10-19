@@ -1,7 +1,7 @@
 // This will be appended to the user's script.
 // Essentially we want to turn console.* calls into send() calls such that we can receive the logged data on the Python side.
 (function () {
-    var _orig = {
+    let _orig = {
         log: console.log,
         error: console.error,
         warn: console.warn,
@@ -37,7 +37,8 @@
             }
             try {
                 _orig[level].apply(console, arguments);
-            } catch (_) { }
+            } catch (_) {
+            }
         };
     }
 

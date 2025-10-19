@@ -1,9 +1,22 @@
-import sys
-import os
 import ctypes
-from PySide6.QtWidgets import QApplication
+import os
+import sys
+
 from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication
+
 from ui.main_window import MainWindow
+
+
+# noinspection PyUnresolvedReferences
+def set_windows_taskbar_icon():
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "com.juliangrtz.ios-re-lab"
+        )
+        ctypes.windll.user32.LoadImageW(0, icon_path, 1, 0, 0, 0x10)
+    except Exception as e:
+        print(f"Warning: Could not set taskbar icon: {e}")
 
 
 def main():
@@ -13,12 +26,7 @@ def main():
     app.setWindowIcon(QIcon(icon_path))
 
     if sys.platform.startswith("win"):
-        try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "com.juliangrtz.ios-re-lab")
-            ctypes.windll.user32.LoadImageW(0, icon_path, 1, 0, 0, 0x10)
-        except Exception as e:
-            print(f"Warning: Could not set taskbar icon: {e}")
+        set_windows_taskbar_icon()
 
     window = MainWindow()
     window.show()
