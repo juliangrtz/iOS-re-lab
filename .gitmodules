@@ -1,6 +1,3 @@
-[submodule "core/frida-iOS-syscall-tracer"]
-	path = core/frida-iOS-syscall-tracer
-	url = https://github.com/juliangrtz/frida-iOS-syscall-tracer
 [submodule "core/frida/frida-iOS-syscall-tracer"]
 	path = core/frida/frida-iOS-syscall-tracer
 	url = https://github.com/juliangrtz/frida-iOS-syscall-tracer
