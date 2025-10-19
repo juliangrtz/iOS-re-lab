@@ -3,3 +3,5 @@ capstone
 unicorn
 yara-python
 colorama
+pytest
+pyside6

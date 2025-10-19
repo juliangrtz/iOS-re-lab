@@ -1,21 +1,25 @@
-# iOS-antiantire
+# iOS-re-studio
 
-Detects common anti-reverse-engineering techniques and protectors in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/), [Capstone](http://www.capstone-engine.org/) and [YARA](https://github.com/VirusTotal/yara).
+![iOS-re-studio](img/preview.png)
+
+WIP reverse engineering suite for iOS applications. Detects common anti-reverse-engineering techniques and protectors in 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/), [Capstone](http://www.capstone-engine.org/) and [YARA](https://github.com/VirusTotal/yara). UI based on PySide6.
 
 ## Features
 
-- Anti-Jailbreak (open/access/stat64, URL schemes, fork, symlinks, dyld...)
-- Syscall detections (ptrace, exit...)
-- Suspicious imports (sysctl, dlsym, getppid...)
-- Timing / anti-breakpoint heuristics
-- Emulator checks
-- Integrity checks
-- Frida checks
-- Protector detection using YARA
-- (WIP) Mach-O section anomalies (code in unusual sections, encrypted sections)
-- (WIP) Network / IPC anti-debug checks (e.g. debugger processes via sockets)
-- (WIP) String scanning
-- (WIP) Heuristics for obfuscations
+- Anti-Reversing detections
+  - Anti-Jailbreak (open/access/stat64, URL schemes, fork, symlinks, dyld...)
+  - Syscall detections (ptrace, exit...)
+  - Suspicious imports (sysctl, dlsym, getppid...)
+  - Timing / anti-breakpoint heuristics
+  - Emulator checks
+  - Integrity checks
+  - Frida checks
+  - Protector detection using YARA
+- WIP: Obfuscation detection
+- WIP: Integrated LLDB-based debugger
+- WIP: Integrated disassembler
+- WIP: Integrated decompiler
+- WIP: Full framework integration (Frida, LIEF, QBDI etc.)
 
 ## Requirements
 
@@ -24,6 +28,8 @@ Detects common anti-reverse-engineering techniques and protectors in 64-bit Mach
 
 ## Installation
 
+This might take a while.
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -31,10 +37,10 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-python scan.py target --out results.json
+python app.py
 ```
 
-## Example output
+## Example output (CLI)
 
 ```plain
 [*] Analysis started: cpu=ARM64, imagebase=0x100000000, pie=True
