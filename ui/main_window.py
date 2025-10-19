@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QAction, QGuiApplication, QTextCursor
+from PySide6.QtGui import QIcon, QAction, QTextCursor, QGuiApplication
 from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QMessageBox, QWidget
 )
@@ -39,9 +39,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"iOS reverse engineering laboratory v{VERSION}")
         self.setWindowIcon(QIcon("img/apple.ico"))
 
-        screen = QGuiApplication.primaryScreen().availableGeometry()
-        self.resize(screen.width() - 50, screen.height() - 50)
-        self.move(screen.topLeft())
+        screen_geom = QGuiApplication.primaryScreen().availableGeometry()
+        width = screen_geom.width()
+        height = screen_geom.height()
+        self.resize(width, height)
+        self.setWindowState(Qt.WindowState.WindowMaximized)
 
         central = QWidget()
         self.setCentralWidget(central)
