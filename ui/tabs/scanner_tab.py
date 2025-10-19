@@ -31,8 +31,31 @@ class ScannerTab(QWidget):
         self.layout.addWidget(self.scan_button)
         self.layout.addWidget(self.tree)
 
+        self.setAcceptDrops(True)
+
         self.file_path = None
         self.scanner = MachOScanner()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if any(url.toLocalFile().endswith((".macho", "")) for url in urls):
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            file_path = event.mimeData().urls()[0].toLocalFile()
+            if file_path:
+                self._handle_dropped_file(file_path)
+                event.acceptProposedAction()
+
+    def _handle_dropped_file(self, file_path: str):
+        self.file_path = file_path
+        self._run_scan()
 
     def _open_file(self):
         file, _ = QFileDialog.getOpenFileName(

@@ -1,44 +1,56 @@
 from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QToolBar, QFileDialog, QMessageBox, QWidget
+    QMainWindow, QDockWidget, QMessageBox, QWidget
 )
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QIcon, QAction, QGuiApplication
 from PySide6.QtCore import Qt
 
+from core.constants import VERSION
 from ui.tabs.scanner_tab import ScannerTab
 from ui.tabs.frida_tab import FridaTab
-# from ui.tabs.patcher_tab import PatcherTab  # future dockable tab
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("iOS reverse engineering laboratory")
-        self.resize(1200, 800)
         self.setWindowIcon(QIcon("img/apple.ico"))
 
-        # Central widget (optional, empty placeholder)
+        screen = QGuiApplication.primaryScreen().availableGeometry()
+        self.resize(screen.width() - 50, screen.height() - 50)
+        self.move(screen.topLeft())
+
         central = QWidget()
         self.setCentralWidget(central)
 
-        # Initialize toolbar
-        self._init_toolbar()
-
-        # Initialize dockable tabs
+        self._init_menubar()
         self.docks = {}
         self._load_dock_tabs()
 
-    def _init_toolbar(self):
-        toolbar = QToolBar("Main")
-        self.addToolBar(toolbar)
+    def _init_menubar(self):
+        menubar = self.menuBar()
 
-        # Open Mach-O binary
-        open_action = QAction(QIcon.fromTheme(
-            "document-open"), "Open Decrypted Binary", self)
-        open_action.triggered.connect(self._open_file)
-        toolbar.addAction(open_action)
+        file_menu = menubar.addMenu("File")
 
-        # Future toolbar actions can be added here
-        # e.g., refresh Frida devices, patch syscalls, etc.
+        exit_action = QAction("Exit", self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        about_action = menubar.addAction("About")
+        about_action.triggered.connect(self._show_about)
+
+    def _show_about(self):
+        qMessageBox = QMessageBox()
+        qMessageBox.setTextFormat(Qt.TextFormat.RichText)
+        qMessageBox.setWindowTitle("About iOS-re-lab")
+        qMessageBox.setText(
+            (
+                f"iOS Reverse Engineering Laboratory v{VERSION}<br>"
+                "<a href=\"https://github.com/juliangrtz/ios-re-lab\">https://github.com/juliangrtz/ios-re-lab</a><br>"
+                "A toolkit for instrumenting iOS apps and analyzing decrypted Mach-O binaries. Work in progress.<br>"
+            )
+        )
+        qMessageBox.setStandardButtons(QMessageBox.StandardButton.Close)
+        qMessageBox.exec()
 
     def _load_dock_tabs(self):
         self.docks["Frida"] = self._add_dock_tab(
@@ -58,23 +70,3 @@ class MainWindow(QMainWindow):
         )
         self.addDockWidget(area, dock)
         return dock
-
-    def _open_file(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open decrypted Mach-O File", "", "Mach-O Files (*)"
-        )
-        if path:
-            # send the file to whichever dock currently has focus
-            focused_widget = self.focusWidget()
-            for dock_name, dock in self.docks.items():
-                tab_widget = dock.widget()
-                if hasattr(tab_widget, "load_file") and (focused_widget is None or tab_widget.isAncestorOf(focused_widget)):
-                    tab_widget.load_file(path)
-                    return
-
-            # fallback: just send to Scanner tab
-            if "Scanner" in self.docks:
-                self.docks["Scanner"].widget().load_file(path)
-            else:
-                QMessageBox.information(
-                    self, "No handler", "No tab can handle files yet.")
