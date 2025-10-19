@@ -15,6 +15,8 @@ WIP reverse engineering suite for iOS applications. Detects common anti-reverse-
   - Integrity checks
   - Frida checks
   - Protector detection using YARA
+- Basic Frida integration
+- Syscall tracing
 - WIP: Obfuscation detection
 - WIP: Integrated LLDB-based debugger
 - WIP: Integrated disassembler
@@ -25,6 +27,7 @@ WIP reverse engineering suite for iOS applications. Detects common anti-reverse-
 
 - Python (>= 3.12.1 recommended)
 - pip
+- git, npm (if you want to trace syscalls)
 
 ## Installation
 
@@ -85,9 +88,7 @@ ldr x16, [sp, #0x288]
 svc 0x80
 ```
 
-- Output IDA-friendly addresses instead of file offsets
-- Offer automatic patches (NOP, RET etc.)
+- Offer automatic patches
 - Add more detections
-- GUI
 - Support ARM32?
 - ...

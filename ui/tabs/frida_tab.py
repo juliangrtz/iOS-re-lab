@@ -1,4 +1,6 @@
 import json
+import os
+from typing import Tuple
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem,
     QHBoxLayout, QMessageBox, QInputDialog, QLineEdit, QFileDialog
@@ -7,6 +9,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 from core import terminal
 from core.frida.frida_integration import FridaManager, FridaError
+from frida.core import Session
+
+COMPILED_SVC_TRACER = False
 
 
 class FridaTab(QWidget):
@@ -15,6 +20,7 @@ class FridaTab(QWidget):
         self.frida = FridaManager()
         self.current_device_id = None
         self.selected_app_identifier = None
+        self.compiled_svc_tracer = False
 
         self.qvBoxLayout = QVBoxLayout(self)
         self.label = QLabel(
@@ -44,8 +50,13 @@ class FridaTab(QWidget):
         self.attach_btn.setEnabled(False)
         self.attach_btn.clicked.connect(self._on_attach_clicked)
 
+        self.trace_svc_btn = QPushButton("Spawn and trace system calls")
+        self.trace_svc_btn.setEnabled(False)
+        self.trace_svc_btn.clicked.connect(self._on_trace_svc_clicked)
+
         btn_layout.addWidget(self.spawn_btn)
         btn_layout.addWidget(self.attach_btn)
+        btn_layout.addWidget(self.trace_svc_btn)
 
         self.qvBoxLayout.addWidget(self.tree)
         self.qvBoxLayout.addLayout(btn_layout)
@@ -58,6 +69,7 @@ class FridaTab(QWidget):
         self.selected_app_identifier = None
         self.spawn_btn.setEnabled(False)
         self.attach_btn.setEnabled(False)
+        self.trace_svc_btn.setEnabled(False)
 
     def refresh_devices(self):
         self.clear()
@@ -100,6 +112,7 @@ class FridaTab(QWidget):
             self.selected_app_identifier = meta.get("identifier")
             self.spawn_btn.setEnabled(True)
             self.attach_btn.setEnabled(True)
+            self.trace_svc_btn.setEnabled(True)
             terminal.info(f"Selected app: {self.selected_app_identifier}")
             return
 
@@ -137,46 +150,47 @@ class FridaTab(QWidget):
         except FridaError as e:
             QMessageBox.critical(self, "Frida error", str(e))
 
-    def _on_spawn_clicked(self):
+    def _spawn_selected_app(self) -> Tuple[Session, int]:
         if not self.selected_app_identifier or not self.current_device_id:
             QMessageBox.information(
                 self, "Select app", "Please select an app to spawn.")
-            return
+            raise
+
+        res = self.frida.spawn_app(
+            self.current_device_id, self.selected_app_identifier)
+        pid = res.get("pid") if isinstance(res, dict) else None
+        terminal.info(
+            f"Spawned {self.selected_app_identifier} -> pid={pid}")
+        if not pid:
+            raise FridaError(
+                f"Could not get pid for {self.selected_app_identifier}")
         try:
-            res = self.frida.spawn_app(
-                self.current_device_id, self.selected_app_identifier)
-            pid = res.get("pid") if isinstance(res, dict) else None
-            terminal.info(
-                f"Spawned {self.selected_app_identifier} -> pid={pid}")
-            if not pid:
-                raise FridaError(
-                    f"Could not get pid for {self.selected_app_identifier}")
-
+            session = self.frida.attach(self.current_device_id, pid)
+            terminal.info(f"Attached to spawned pid {pid}: {session}")
+            return session, pid
+        except Exception as e:
+            terminal.warn(f"Failed to attach to spawned pid {pid}: {e}")
             try:
-                session = self.frida.attach(self.current_device_id, pid)
-                terminal.info(f"Attached to spawned pid {pid}: {session}")
-            except Exception as e:
-                terminal.warn(f"Failed to attach to spawned pid {pid}: {e}")
-                try:
-                    self.frida.resume(self.current_device_id, pid)
-                    terminal.info(f"Resumed pid {pid} (after failed attach)")
-                except Exception as e2:
-                    terminal.warn(f"Could not resume pid {pid}: {e2}")
-                raise
+                self.frida.resume(self.current_device_id, pid)
+                terminal.info(f"Resumed pid {pid} (after failed attach)")
+            except Exception as e2:
+                terminal.warn(f"Could not resume pid {pid}: {e2}")
+            raise
 
+    def _on_spawn_clicked(self):
+        try:
+            session, pid = self._spawn_selected_app()
             try:
-                self._inject_script(session)
+                self._inject_script(session, self._read_script_file())
             except Exception as e:
                 terminal.warn(f"Script injection failed for pid {pid}: {e}")
 
             try:
-                self.frida.resume(self.current_device_id, pid)
+                self.frida.resume(self.current_device_id, pid)  # type: ignore
                 terminal.info(f"Resumed pid {pid}")
             except Exception as e:
                 terminal.warn(f"Could not resume pid {pid}: {e}")
 
-        except FridaError as e:
-            QMessageBox.critical(self, "Spawn failed", str(e))
         except Exception as e:
             QMessageBox.critical(self, "Spawn error", str(e))
 
@@ -207,38 +221,35 @@ class FridaTab(QWidget):
             if not self.current_device_id:
                 raise FridaError("Current device ID not set")
             session = self.frida.attach(self.current_device_id, pid)
-            terminal.info(f"Attached to pid {pid}: {session}")
             try:
-                self._inject_script(session)
+                self._inject_script(session, self._read_script_file())
             except Exception as e:
                 terminal.warn(f"Script injection failed after attach: {e}")
-        except FridaError as e:
-            QMessageBox.critical(self, "Attach failed", str(e))
         except Exception as e:
             QMessageBox.critical(self, "Attach error", str(e))
 
-    def _inject_script(self, session):
+    def _read_script_file(self):
+        try:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self, "Select script", "", "JavaScript file (*.js)")
+            if not file_path:
+                return
+            with open(file_path, mode="r", encoding="utf-8") as script:
+                with open("core/frida/common.js", mode="r", encoding="utf-8") as common:
+                    return script.read() + "\n" + common.read()
+        except Exception as e:
+            QMessageBox.critical(self, "File error",
+                                 f"Could not read file: {e}")
+            raise
+
+    def _inject_script(self, session, script):
         if session is None:
             QMessageBox.warning(self, "No session",
                                 "No Frida session available to inject the script.")
             return
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select script", "", "JavaScript file (*.js)")
-        if not file_path:
-            return
-
         try:
-            with open(file_path, mode="r", encoding="utf-8") as script:
-                with open("core/frida/common.js", mode="r", encoding="utf-8") as common:
-                    js_source = script.read() + "\n" + common.read()
-        except Exception as e:
-            QMessageBox.critical(self, "File error",
-                                 f"Could not read file: {e}")
-            return
-
-        try:
-            script = session.create_script(js_source)
+            script = session.create_script(script)
 
             def on_message(message, data):
                 try:
@@ -262,9 +273,35 @@ class FridaTab(QWidget):
             script.on("message", on_message)
 
             script.load()
-            terminal.info(f"Injected script from {file_path}")
+            terminal.info(f"Injected script")
 
         except Exception as e:
             QMessageBox.critical(self, "Injection failed",
                                  f"Could not inject script: {e}")
             raise
+
+    def _on_trace_svc_clicked(self):
+        if not self.compiled_svc_tracer:
+            retval = os.system(
+                "cd core/frida/frida-iOS-syscall-tracer && git pull && npm install"
+            )
+
+            if retval != 0:
+                QMessageBox.critical(self, "Error",
+                                     f"Could not compile syscall tracer: npm returned {retval}\nIs npm installed?")
+                return
+            self.compiled_svc_tracer = True
+
+        try:
+            with open("core/frida/frida-iOS-syscall-tracer/_tracer.js", mode="r", encoding="utf-8") as tracer:
+                with open("core/frida/common.js", mode="r", encoding="utf-8") as common:
+                    session, pid = self._spawn_selected_app()
+                    self._inject_script(
+                        session, tracer.read() + "\n" + common.read()
+                    )
+                    self.frida.resume(
+                        self.current_device_id, pid  # type: ignore
+                    )
+        except Exception as e:
+            QMessageBox.critical(self, "File error",
+                                 f"Could not read tracer: {e}")
