@@ -34,6 +34,8 @@ WIP reverse engineering suite for iOS applications. Detects common anti-reverse-
 This might take a while.
 
 ```bash
+git clone --recurse-submodules https://github.com/juliangrtz/iOS-re-lab
+cd iOS-re-lab
 pip install -r requirements.txt
 ```
 

@@ -7,3 +7,4 @@ frida-tools
 colorama
 pytest
 pyside6
+ansi2html
