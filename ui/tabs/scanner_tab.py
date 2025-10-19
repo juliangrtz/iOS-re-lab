@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem, QFileDialog, QHBoxLayout
 )
+from core.constants import MAGIC_64, MAGIC_FAT
 from core.scan import MachOScanner
 
 
@@ -49,7 +50,7 @@ class ScannerTab(QWidget):
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             file_path = event.mimeData().urls()[0].toLocalFile()
-            if file_path:
+            if file_path and self._is_macho_file(file_path):
                 self._handle_dropped_file(file_path)
                 event.acceptProposedAction()
 
@@ -57,11 +58,16 @@ class ScannerTab(QWidget):
         self.file_path = file_path
         self._run_scan()
 
+    def _is_macho_file(self, file_path):
+        with open(file_path, 'rb') as f:
+            magic = int.from_bytes(f.read(4))
+            return magic in MAGIC_64 or magic in MAGIC_FAT
+
     def _open_file(self):
         file, _ = QFileDialog.getOpenFileName(
             self, "Select Mach-O File", "", "Mach-O Files (*)"
         )
-        if file:
+        if file and self._is_macho_file(file):
             self.file_path = file
             self.scan_button.setEnabled(True)
             self.label.setText(f"🔍 Mach-O Scanner — {file.split('/')[-1]}")
