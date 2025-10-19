@@ -41,8 +41,7 @@ def test_scan_real_macho():
     def logger(msg, level="info"):
         logs.append((level, msg))
 
-    scanner = MachOScanner(strings_dict=strings,
-                           rules_dir="rules", logger=logger)
+    scanner = MachOScanner(strings_dict=strings)
 
     results = scanner.analyze(
         sample, syscall_map_path=None, out_path=None, verbose=False, run_yara=False)
