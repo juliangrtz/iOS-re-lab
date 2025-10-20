@@ -3,7 +3,6 @@ import os
 from typing import Tuple
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem,
     QHBoxLayout, QMessageBox, QInputDialog, QLineEdit, QFileDialog
@@ -89,12 +88,6 @@ class FridaTab(QWidget):
                 dev_item = QTreeWidgetItem([f"{type_}", f"{name} (id={id_})"])
                 dev_item.setData(0, Qt.ItemDataRole.UserRole, {
                     "type": "device", "device_id": id_})
-
-                icon_bytes = d.get("icon")  # always seems to be None ＞︿＜
-                if icon_bytes:
-                    pix = QPixmap()
-                    if pix.loadFromData(icon_bytes):
-                        dev_item.setIcon(0, QIcon(pix))
 
                 self.tree.addTopLevelItem(dev_item)
 

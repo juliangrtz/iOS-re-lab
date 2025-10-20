@@ -25,14 +25,11 @@ class FridaManager:
         Returns list of iOS devices as dicts: {'id': id, 'name': name, 'type': 'usb'|'remote'|'local', 'usb': bool}
         """
         results = []
-        devices = [dev for dev in frida.enumerate_devices()
-                   if "iOS Device" in str(dev.name or "")]
-        for dev in devices:
+        for dev in frida.enumerate_devices():
             results.append({
                 "id": getattr(dev, "id", getattr(dev, "name", str(dev))),
                 "name": getattr(dev, "name", getattr(dev, "id", str(dev))),
                 "type": getattr(dev, "type", "unknown"),
-                "icon": getattr(dev, "icon", None)
             })
 
         return results
