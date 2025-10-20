@@ -345,8 +345,7 @@ class MachOScanner:
                 for ins in result.get("context", [])[-12:]:
                     mnemonic = str(ins['mnemonic'])
                     arrow = ">>> " if mnemonic.startswith("svc") else "    "
-                    info(
-                        f"  {arrow}0x{ins['address']:x}  {mnemonic} {ins['op_str']}", "debug")
+                    debug(f"  {arrow}0x{ins['address']:x}  {mnemonic} {ins['op_str']}")
                 debug("")
             i += 4
         return results

@@ -1,9 +1,19 @@
+import json
+
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QLabel, QTreeWidget, QTreeWidgetItem, QFileDialog, QHBoxLayout
+    QWidget, QVBoxLayout, QPushButton, QLabel,
+    QTreeWidget, QTreeWidgetItem, QFileDialog, QHBoxLayout
 )
 
+from core.concurrency.subprocess import Subprocess
 from core.scan import MachOScanner
 from core.utils import is_macho_file
+
+
+def run_scan_process(file_path: str, verbose: bool = True):
+    scanner = MachOScanner()
+    results = scanner.analyze(file_path, verbose=verbose, out_path=None)
+    return json.dumps(results)
 
 
 class ScannerTab(QWidget):
@@ -25,6 +35,8 @@ class ScannerTab(QWidget):
         self.tree.setColumnWidth(0, 220)
         self.tree.setAlternatingRowColors(True)
 
+        # todo add spinner
+
         self.scan_button = QPushButton("Run Scan")
         self.scan_button.clicked.connect(self._on_scan_clicked)
         self.scan_button.setEnabled(False)
@@ -36,7 +48,11 @@ class ScannerTab(QWidget):
         self.setAcceptDrops(True)
 
         self.file_path = None
-        self.scanner = MachOScanner()
+        self.worker = Subprocess()
+
+    def _toggle_button_states(self, on):
+        self.scan_button.setEnabled(on)
+        self.open_button.setEnabled(on)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -49,6 +65,7 @@ class ScannerTab(QWidget):
             event.ignore()
 
     def dropEvent(self, event):
+        # todo forbid drop when already scanning
         if event.mimeData().hasUrls():
             file_path = event.mimeData().urls()[0].toLocalFile()
             if file_path and is_macho_file(file_path):
@@ -80,22 +97,26 @@ class ScannerTab(QWidget):
         if not self.file_path:
             return
 
-        self.scan_button.setEnabled(False)
+        self._toggle_button_states(False)
         self.tree.clear()
         status_root = QTreeWidgetItem(["Status", "Scanning..."])
         self.tree.addTopLevelItem(status_root)
 
-        # TODO: This is a blocking call, UI will freeze here for large files!
-        results = self.scanner.analyze(self.file_path, verbose=True)
+        self.worker.submit(
+            run_scan_process,
+            self.file_path,
+            True,
+            on_done=self._display_results,
+            on_error=self._display_error
+        )
 
-        print(results)
-
+    def _display_results(self, jsonResults):
         self.tree.clear()
         root = QTreeWidgetItem(["Scan Results", self.file_path])
         self.tree.addTopLevelItem(root)
 
-        for i, result in enumerate(results, 1):
-            result_item = QTreeWidgetItem([f"Binary"])
+        for i, result in enumerate(json.loads(jsonResults), 1):
+            result_item = QTreeWidgetItem(["Binary"])
             root.addChild(result_item)
 
             for category, data in result.items():
@@ -109,15 +130,6 @@ class ScannerTab(QWidget):
                             f"section: {s.get('section', '')}, offset: {s.get('offset', '')}"
                         ])
                         cat_item.addChild(syscall_item)
-
-                        # context = s.get("context", [])
-                        # for ins in context[-12:]:  # last 12 instructions
-                        #    ctx_item = QTreeWidgetItem([
-                        #        f"0x{ins['address']:x} {ins['mnemonic']}",
-                        #        ins.get("op_str", "")
-                        #    ])
-                        #    syscall_item.addChild(ctx_item)
-
                 elif isinstance(data, dict):
                     for k, v in data.items():
                         sub_item = QTreeWidgetItem([str(k), str(v)])
@@ -131,4 +143,13 @@ class ScannerTab(QWidget):
 
         root.setExpanded(True)
         self.tree.expandAll()
-        self.scan_button.setEnabled(True)
+        self._toggle_button_states(True)
+
+    def _display_error(self, error):
+        self.tree.clear()
+        self.tree.addTopLevelItem(QTreeWidgetItem(["Error", str(error)]))
+        self._toggle_button_states(True)
+
+    def closeEvent(self, event):
+        self.worker.shutdown(wait=False, cancel_futures=True)
+        super().closeEvent(event)
