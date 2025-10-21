@@ -5,9 +5,10 @@ from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, QFileDialog, QHBoxLayout
 )
 
+from core import logger
 from core.concurrency.subprocess import Subprocess
+from core.macho.macho import is_macho_file
 from core.scan import MachOScanner
-from core.utils import is_macho_file
 
 
 def run_scan_process(file_path: str, verbose: bool = True):
@@ -38,6 +39,8 @@ class ScannerTab(QWidget):
         # todo add spinner
 
         self.scan_button = QPushButton("Run Scan")
+        self.scan_button.setMinimumHeight(30)
+        self.scan_button.setStyleSheet("font-weight: bold")
         self.scan_button.clicked.connect(self._on_scan_clicked)
         self.scan_button.setEnabled(False)
 
@@ -97,6 +100,8 @@ class ScannerTab(QWidget):
         if not self.file_path:
             return
 
+        logger.info("Mach-O scanner started :: " + self.file_path)
+
         self._toggle_button_states(False)
         self.tree.clear()
         status_root = QTreeWidgetItem(["Status", "Scanning..."])
@@ -106,16 +111,18 @@ class ScannerTab(QWidget):
             run_scan_process,
             self.file_path,
             True,
-            on_done=self._display_results,
+            on_done=self._on_finish,
             on_error=self._display_error
         )
 
-    def _display_results(self, jsonResults):
+    def _on_finish(self, json_results):
+        logger.info("Mach-O scanner finished!")
+
         self.tree.clear()
         root = QTreeWidgetItem(["Scan Results", self.file_path])
         self.tree.addTopLevelItem(root)
 
-        for i, result in enumerate(json.loads(jsonResults), 1):
+        for i, result in enumerate(json.loads(json_results), 1):
             result_item = QTreeWidgetItem(["Binary"])
             root.addChild(result_item)
 
@@ -149,6 +156,7 @@ class ScannerTab(QWidget):
         self.tree.clear()
         self.tree.addTopLevelItem(QTreeWidgetItem(["Error", str(error)]))
         self._toggle_button_states(True)
+        logger.error(f"Mach-O scanner failed: {error}")
 
     def closeEvent(self, event):
         self.worker.shutdown(wait=False, cancel_futures=True)

@@ -1,5 +1,3 @@
-import sys
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction, QGuiApplication
 from PySide6.QtWidgets import (
@@ -7,8 +5,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QTextEdit
 
+from core import logger
 from core.constants import VERSION
-from core.io.emitting_stream import EmittingStream
 from ui.tabs.frida_tab import FridaTab
 from ui.tabs.scanner_tab import ScannerTab
 
@@ -73,7 +71,7 @@ class MainWindow(QMainWindow):
         )
         self.docks["Log"] = self._add_dock_tab(
             "Log",
-            self._create_output_widget(),
+            self._init_output_pipeline(),
             area=Qt.DockWidgetArea.BottomDockWidgetArea,
             height=400,
         )
@@ -99,19 +97,12 @@ class MainWindow(QMainWindow):
         self.addDockWidget(area, dock)
         return dock
 
-    def _create_output_widget(self) -> QTextEdit:
+    def _init_output_pipeline(self) -> QTextEdit:
         text_edit = QTextEdit()
         text_edit.setReadOnly(True)
         text_edit.acceptRichText()
-        text_edit.setStyleSheet(
-            "background-color: black; font-family: monospace;"
-        )
+        text_edit.setStyleSheet("background-color: black; font-family: monospace;")
 
-        sys.stdout = EmittingStream(text_edit)
-        sys.stderr = EmittingStream(text_edit, err=True)
-
+        logger.init(text_edit)
+        logger.info("Logger initialized successfully.")
         return text_edit
-
-    def write_output(self, text: str):
-        if "Log" in self.docks:
-            self.docks["Log"].widget().append(text)
