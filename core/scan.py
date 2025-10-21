@@ -11,7 +11,7 @@ from capstone import Cs, CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN
 from capstone.arm64 import ARM64_INS_SVC
 from lief import MachO
 
-from .terminal import *
+from .logger import *
 
 LoggerType = Callable[[str, str, object | None], None]
 

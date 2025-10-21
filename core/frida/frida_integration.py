@@ -3,7 +3,7 @@ from typing import List, Dict
 
 import frida
 
-from core import terminal
+from core import logger
 
 
 class FridaError(Exception):
@@ -63,7 +63,7 @@ class FridaManager:
             return apps
 
         except Exception as e:
-            terminal.error(
+            logger.error(
                 f"list_applications error: {e}\n{traceback.format_exc()}")
             raise FridaError(str(e))
 
@@ -80,7 +80,7 @@ class FridaManager:
                 app_identifier, str) else d.spawn(app_identifier)
             return {"pid": int(pid) if pid is not None else None, "identifier": app_identifier}
         except Exception as e:
-            terminal.error(f"spawn_app error: {e}\n{traceback.format_exc()}")
+            logger.error(f"spawn_app error: {e}\n{traceback.format_exc()}")
             raise FridaError(str(e))
 
     def resume(self, device_id: str, pid: int):
@@ -94,7 +94,7 @@ class FridaManager:
             d.resume(pid)
             return True
         except Exception as e:
-            terminal.error(
+            logger.error(
                 f"resume error: {e}\n{traceback.format_exc()}")
             raise FridaError(str(e))
 
@@ -107,5 +107,5 @@ class FridaManager:
             sess = d.attach(pid)
             return sess
         except Exception as e:
-            terminal.error(f"attach error: {e}\n{traceback.format_exc()}")
+            logger.error(f"attach error: {e}\n{traceback.format_exc()}")
             raise FridaError(str(e))

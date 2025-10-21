@@ -1,36 +1,16 @@
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QAction, QTextCursor, QGuiApplication
+from PySide6.QtGui import QIcon, QAction, QGuiApplication
 from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QMessageBox, QWidget
 )
 from PySide6.QtWidgets import QTextEdit
-from ansi2html import Ansi2HTMLConverter
 
 from core.constants import VERSION
+from core.io.emitting_stream import EmittingStream
 from ui.tabs.frida_tab import FridaTab
 from ui.tabs.scanner_tab import ScannerTab
-
-
-class EmittingStream:
-    ansiConverter = Ansi2HTMLConverter(inline=True)
-
-    def __init__(self, text_widget: QTextEdit):
-        self.text_widget = text_widget
-
-    def write(self, text):
-        if text.strip():
-            html_text = self.ansiConverter.convert(text, full=False)
-            self.text_widget.append(html_text)
-
-            cursor = self.text_widget.textCursor()
-            cursor.movePosition(QTextCursor.MoveOperation.End)
-            self.text_widget.setTextCursor(cursor)
-            self.text_widget.ensureCursorVisible()
-
-    def flush(self):
-        pass
 
 
 class MainWindow(QMainWindow):
@@ -82,29 +62,29 @@ class MainWindow(QMainWindow):
         self.docks["Frida"] = self._add_dock_tab(
             "Frida",
             FridaTab(),
+            area=Qt.DockWidgetArea.LeftDockWidgetArea,
             width=int(self.width() / 2),
-            area=Qt.DockWidgetArea.LeftDockWidgetArea
         )
         self.docks["Scanner"] = self._add_dock_tab(
             "Scanner",
             ScannerTab(),
+            area=Qt.DockWidgetArea.RightDockWidgetArea,
             width=int(self.width() / 2),
-            area=Qt.DockWidgetArea.RightDockWidgetArea
         )
         self.docks["Log"] = self._add_dock_tab(
             "Log",
             self._create_output_widget(),
+            area=Qt.DockWidgetArea.BottomDockWidgetArea,
             height=400,
-            area=Qt.DockWidgetArea.BottomDockWidgetArea
         )
 
     def _add_dock_tab(
             self,
             name: str,
             widget: QWidget,
+            area: Qt.DockWidgetArea,
             width: int = 0,
-            height: int = 0,
-            area=Qt.DockWidgetArea.RightDockWidgetArea
+            height: int = 0
     ) -> QDockWidget:
         dock = QDockWidget(name, self)
         dock.setWidget(widget)
@@ -128,7 +108,7 @@ class MainWindow(QMainWindow):
         )
 
         sys.stdout = EmittingStream(text_edit)
-        sys.stderr = EmittingStream(text_edit)
+        sys.stderr = EmittingStream(text_edit, err=True)
 
         return text_edit
 

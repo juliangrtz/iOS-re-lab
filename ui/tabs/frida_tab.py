@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 from frida.core import Session
 
-from core import terminal
+from core import logger
 from core.frida.frida_integration import FridaManager, FridaError
 
 COMPILED_SVC_TRACER = False
@@ -77,7 +77,7 @@ class FridaTab(QWidget):
         try:
             devices = self.frida.list_ios_devices()
             if not devices:
-                terminal.error(
+                logger.error(
                     "No Frida devices found (ensure frida-server is running on device).")
                 return
 
@@ -108,7 +108,7 @@ class FridaTab(QWidget):
             self.spawn_btn.setEnabled(True)
             self.attach_btn.setEnabled(True)
             self.trace_svc_btn.setEnabled(True)
-            terminal.info(f"Selected app: {self.selected_app_identifier}")
+            logger.info(f"Selected app: {self.selected_app_identifier}")
             return
 
         self.selected_app_identifier = None
@@ -154,22 +154,22 @@ class FridaTab(QWidget):
         res = self.frida.spawn_app(
             self.current_device_id, self.selected_app_identifier)
         pid = res.get("pid") if isinstance(res, dict) else None
-        terminal.info(
+        logger.info(
             f"Spawned {self.selected_app_identifier} -> pid={pid}")
         if not pid:
             raise FridaError(
                 f"Could not get pid for {self.selected_app_identifier}")
         try:
             session = self.frida.attach(self.current_device_id, pid)
-            terminal.info(f"Attached to spawned pid {pid}: {session}")
+            logger.info(f"Attached to spawned pid {pid}: {session}")
             return session, pid
         except Exception as e:
-            terminal.warn(f"Failed to attach to spawned pid {pid}: {e}")
+            logger.warn(f"Failed to attach to spawned pid {pid}: {e}")
             try:
                 self.frida.resume(self.current_device_id, pid)
-                terminal.info(f"Resumed pid {pid} (after failed attach)")
+                logger.info(f"Resumed pid {pid} (after failed attach)")
             except Exception as e2:
-                terminal.warn(f"Could not resume pid {pid}: {e2}")
+                logger.warn(f"Could not resume pid {pid}: {e2}")
             raise
 
     def _on_spawn_clicked(self):
@@ -178,13 +178,13 @@ class FridaTab(QWidget):
             try:
                 self._inject_script(session, self._read_script_file())
             except Exception as e:
-                terminal.warn(f"Script injection failed for pid {pid}: {e}")
+                logger.warn(f"Script injection failed for pid {pid}: {e}")
 
             try:
                 self.frida.resume(self.current_device_id, pid)  # type: ignore
-                terminal.info(f"Resumed pid {pid}")
+                logger.info(f"Resumed pid {pid}")
             except Exception as e:
-                terminal.warn(f"Could not resume pid {pid}: {e}")
+                logger.warn(f"Could not resume pid {pid}: {e}")
 
         except Exception as e:
             QMessageBox.critical(self, "Spawn error", str(e))
@@ -219,7 +219,7 @@ class FridaTab(QWidget):
             try:
                 self._inject_script(session, self._read_script_file())
             except Exception as e:
-                terminal.warn(f"Script injection failed after attach: {e}")
+                logger.warn(f"Script injection failed after attach: {e}")
         except Exception as e:
             QMessageBox.critical(self, "Attach error", str(e))
 
@@ -253,22 +253,22 @@ class FridaTab(QWidget):
                         payload = message.get("payload")
                         if mtype == "send":
                             if isinstance(payload, (dict, list)):
-                                terminal.info(f"[frida] {json.dumps(payload)}")
+                                logger.info(f"[frida] {json.dumps(payload)}")
                             else:
-                                terminal.info(f"[frida] {payload}")
+                                logger.info(f"[frida] {payload}")
                         elif mtype == "error":
-                            terminal.error(f"[frida error] {payload}")
+                            logger.error(f"[frida error] {payload}")
                         else:
-                            terminal.info(f"[frida msg] {message}")
+                            logger.info(f"[frida msg] {message}")
                     else:
-                        terminal.info(f"[frida] {message}")
+                        logger.info(f"[frida] {message}")
                 except Exception as ex:
-                    terminal.warn(f"Error in on_message handler: {ex}")
+                    logger.warn(f"Error in on_message handler: {ex}")
 
             script.on("message", on_message)
 
             script.load()
-            terminal.info(f"Injected script")
+            logger.info(f"Injected script")
 
         except Exception as e:
             QMessageBox.critical(self, "Injection failed",
