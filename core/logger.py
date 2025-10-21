@@ -2,8 +2,12 @@ import logging
 import time
 from typing import Optional
 
-from PySide6.QtCore import QMetaObject, Qt, Q_ARG
-from PySide6.QtWidgets import QTextEdit
+try:
+    from PySide6.QtCore import QMetaObject, Qt, Q_ARG
+    from PySide6.QtWidgets import QTextEdit
+except ImportError:
+    QMetaObject, QObject, QTextEdit, Qt, Q_ARG = None, None, None, None, None
+
 from ansi2html import Ansi2HTMLConverter
 from colorama import Fore, Style
 
