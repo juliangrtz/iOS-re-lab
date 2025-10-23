@@ -55,6 +55,11 @@ class MachOSelectTab(QWidget):
         self.start_btn.clicked.connect(self._on_start)
         main_layout.addWidget(self.start_btn)
 
+    def mousePressEvent(self, event):
+        if self.drag_drop_frame.geometry().contains(event.position().toPoint()):
+            self._open_file()
+        super().mousePressEvent(event)
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
