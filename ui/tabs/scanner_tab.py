@@ -24,7 +24,7 @@ class ScannerTab(QWidget):
 
         header_layout = QHBoxLayout()
         self.label = QLabel("🔍 Mach-O Scanner")
-        self.open_button = QPushButton("📂 Open File")
+        self.open_button = QPushButton("📂 Open Binary")
         self.open_button.clicked.connect(self._open_file)
         header_layout.addWidget(self.label)
         header_layout.addStretch()

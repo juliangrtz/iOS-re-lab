@@ -1,12 +1,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction, QGuiApplication
 from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QMessageBox, QWidget
+    QMainWindow, QDockWidget, QMessageBox, QWidget, QTabWidget
 )
 from PySide6.QtWidgets import QTextEdit
 
 from core import logger
 from core.constants import VERSION
+from ui.tabs.disasm_tab import DisassemblyTab
 from ui.tabs.frida_tab import FridaTab
 from ui.tabs.scanner_tab import ScannerTab
 
@@ -29,6 +30,12 @@ class MainWindow(QMainWindow):
         self._init_menubar()
         self.docks = {}
         self._load_dock_tabs()
+        self.setDockOptions(
+            QMainWindow.AllowNestedDocks |
+            QMainWindow.AllowTabbedDocks |
+            QMainWindow.AnimatedDocks
+        )
+        self.setDockNestingEnabled(True)
 
     def _init_menubar(self):
         menubar = self.menuBar()
@@ -57,35 +64,47 @@ class MainWindow(QMainWindow):
         qMessageBox.exec()
 
     def _load_dock_tabs(self):
-        self.docks["Frida"] = self._add_dock_tab(
+        self.docks["Frida"] = self._add_dock_tabs(
             "Frida",
-            FridaTab(),
+            ("Frida", FridaTab()),
             area=Qt.DockWidgetArea.LeftDockWidgetArea,
             width=int(self.width() / 2),
         )
-        self.docks["Scanner"] = self._add_dock_tab(
-            "Scanner",
-            ScannerTab(),
+
+        self.docks["Binary Analysis"] = self._add_dock_tabs(
+            "Binary Analysis",
+            ("Scanner", ScannerTab()),
+            ("Disassembly", DisassemblyTab()),
             area=Qt.DockWidgetArea.RightDockWidgetArea,
             width=int(self.width() / 2),
         )
-        self.docks["Log"] = self._add_dock_tab(
+
+        self.docks["Log"] = self._add_dock_tabs(
             "Log",
-            self._init_output_pipeline(),
+            ("Log Output", self._init_output_pipeline()),
             area=Qt.DockWidgetArea.BottomDockWidgetArea,
             height=400,
         )
 
-    def _add_dock_tab(
+    def _add_dock_tabs(
             self,
             name: str,
-            widget: QWidget,
+            *widgets_with_names: tuple[str, QWidget],
             area: Qt.DockWidgetArea,
             width: int = 0,
-            height: int = 0
+            height: int = 0,
     ) -> QDockWidget:
         dock = QDockWidget(name, self)
-        dock.setWidget(widget)
+
+        if len(widgets_with_names) == 1:
+            _, widget = widgets_with_names[0]
+            dock.setWidget(widget)
+        else:
+            tabs = QTabWidget()
+            for title, widget in widgets_with_names:
+                tabs.addTab(widget, title)
+            dock.setWidget(tabs)
+
         dock.setMinimumWidth(width)
         dock.setMinimumHeight(height)
         dock.setFloating(False)
