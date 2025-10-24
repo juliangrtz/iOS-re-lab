@@ -7,10 +7,11 @@ from PySide6.QtWidgets import QTextEdit
 
 from core import logger
 from core.constants import VERSION
-from ui.tabs.disasm_tab import DisassemblyTab
-from ui.tabs.frida_tab import FridaTab
-from ui.tabs.macho_select_tab import MachOSelectTab
-from ui.tabs.scanner_tab import ScannerTab
+from ui.tabs.binary_analysis.disasm_tab import DisassemblyTab
+from ui.tabs.binary_analysis.macho_info import MachOInfoTab
+from ui.tabs.binary_analysis.macho_select_tab import MachOSelectTab
+from ui.tabs.binary_analysis.scanner_tab import ScannerTab
+from ui.tabs.frida.frida_tab import FridaTab
 
 
 class MainWindow(QMainWindow):
@@ -72,11 +73,13 @@ class MainWindow(QMainWindow):
             width=int(self.width() / 2),
         )
 
+        info_tab = MachOInfoTab()
         scanner_tab = ScannerTab()
         disasm_tab = DisassemblyTab()
         self.docks["Binary Analysis"] = self._add_dock_tabs(
             "Binary Analysis",
-            ("File selection", MachOSelectTab(scanner_tab, disasm_tab)),
+            ("File selection", MachOSelectTab(scanner_tab, disasm_tab, info_tab)),
+            ("Info", info_tab),
             ("Scanner", scanner_tab),
             ("Disassembly", disasm_tab),
             area=Qt.DockWidgetArea.RightDockWidgetArea,

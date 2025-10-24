@@ -16,7 +16,7 @@ class DisassemblyTab(QWidget):
         self.qvBoxLayout = QVBoxLayout(self)
 
         header_layout = QHBoxLayout()
-        self.label = QLabel("Disassembly")
+        self.label = QLabel("🧩 Disassembly\nPowered by Capstone.")
         header_layout.addWidget(self.label)
         header_layout.addStretch()
 
@@ -32,6 +32,8 @@ class DisassemblyTab(QWidget):
         search_layout.addWidget(self.search_box)
         search_layout.addWidget(self.jump_box)
 
+        # QPlainTextEdit is utterly horrible for large amounts of disassembly.
+        # TODO Look into alternatives.
         self.disasm_view = QPlainTextEdit()
         self.disasm_view.setReadOnly(True)
         self.disasm_view.setLineWrapMode(QPlainTextEdit.NoWrap)

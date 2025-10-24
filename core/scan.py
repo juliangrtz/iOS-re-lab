@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import List, Dict, Tuple, Optional, Callable, Any
+from typing import List, Dict, Tuple, Callable, Any
 
 import lief
 import yara

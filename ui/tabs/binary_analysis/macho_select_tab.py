@@ -3,16 +3,18 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QCheckBox, QFrame, QGroupBox, QPushButton, QFileDialog
 )
 
+from core import logger
 from core.analysis_config import ANALYSIS_CONFIG
 from core.macho.macho import is_macho_file
 
 
 class MachOSelectTab(QWidget):
-    def __init__(self, scanner_tab=None, disasm_tab=None):
+    def __init__(self, scanner_tab=None, disasm_tab=None, info_tab=None):
         super().__init__()
         self.setAcceptDrops(True)
         self.disasm_tab = disasm_tab
         self.scanner_tab = scanner_tab
+        self.info_tab = info_tab
 
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(15)
@@ -53,6 +55,7 @@ class MachOSelectTab(QWidget):
         self.start_btn.setMinimumHeight(40)
         self.start_btn.setStyleSheet("font-weight: bold; font-size: 20px;")
         self.start_btn.clicked.connect(self._on_start)
+        self.start_btn.setEnabled(False)
         main_layout.addWidget(self.start_btn)
 
     def mousePressEvent(self, event):
@@ -69,7 +72,7 @@ class MachOSelectTab(QWidget):
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             file_path = event.mimeData().urls()[0].toLocalFile()
-            if file_path:
+            if file_path and is_macho_file(file_path):
                 self.set_file(file_path)
                 event.acceptProposedAction()
 
@@ -84,6 +87,7 @@ class MachOSelectTab(QWidget):
         ANALYSIS_CONFIG.file_path = file_path
         self.file_label.setText(f"Selected File: {file_path.split('/')[-1]}")
         self._update_config()
+        self.start_btn.setEnabled(True)
 
     def _update_config(self):
         ANALYSIS_CONFIG.options = {
@@ -94,7 +98,10 @@ class MachOSelectTab(QWidget):
     def _on_start(self):
         file_path = ANALYSIS_CONFIG.file_path
         if not file_path:
+            logger.warn("No Mach-O file selected!")
             return
+
+        self.info_tab.load_macho(file_path)
 
         if ANALYSIS_CONFIG.options.get("disasm") and self.disasm_tab:
             self.disasm_tab.start_disassembly(file_path)

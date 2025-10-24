@@ -22,7 +22,7 @@ class ScannerTab(QWidget):
         self.qvBoxLayout = QVBoxLayout(self)
 
         header_layout = QHBoxLayout()
-        self.label = QLabel("🔍 Mach-O Scanner")
+        self.label = QLabel("🔍 Mach-O Scanner\nReveal interesting artifacts.")
         header_layout.addWidget(self.label)
         header_layout.addStretch()
 
