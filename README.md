@@ -1,6 +1,7 @@
 # iOS-re-lab
 
-![iOS RE Lab](img/preview.png)
+![iOS-re-lab-preview](https://github.com/user-attachments/assets/b3d27d8c-58dc-42ad-8911-f63e6fe463a2)
+
 
 WIP reverse engineering suite for iOS applications. Detects common anti-reverse-engineering techniques and protectors in
 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/), [Capstone](http://www.capstone-engine.org/)
