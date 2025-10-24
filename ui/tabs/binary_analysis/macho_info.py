@@ -24,20 +24,22 @@ class MachOInfoTab(QWidget):
         self.qvBoxLayout.addLayout(header_layout)
         self.qvBoxLayout.addWidget(self.tree)
 
+        self.binary = None
+
     def load_macho(self, file_path: str):
         try:
-            binary = lief.parse(file_path)
+            self.binary = lief.parse(file_path)
         except Exception as e:
             self._display_error(f"Error parsing file: {e}")
             return
 
-        if not isinstance(binary, lief.MachO.Binary):
+        if not isinstance(self.binary, lief.MachO.Binary):
             self._display_error("Not a valid Mach-O binary.")
             return
 
         logger.debug(f"File analysis for {file_path} started.")
         self.tree.clear()
-        self._fill_tree(binary)
+        self._fill_tree(self.binary)
 
     def _fill_tree(self, binary: lief.MachO.Binary):
         ### HEADER ###
@@ -117,3 +119,6 @@ class MachOInfoTab(QWidget):
         self.tree.clear()
         self.tree.addTopLevelItem(QTreeWidgetItem(["Error", str(error)]))
         logger.error(f"Couldn't obtain Mach-O info: {error}")
+
+    def get_macho(self):
+        return self.binary

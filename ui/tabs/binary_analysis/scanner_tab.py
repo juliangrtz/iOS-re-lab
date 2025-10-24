@@ -17,8 +17,9 @@ def run_scan_process(file_path: str, verbose: bool = True):
 
 
 class ScannerTab(QWidget):
-    def __init__(self):
+    def __init__(self, info_tab=None):
         super().__init__()
+        self.info_tab = info_tab
         self.qvBoxLayout = QVBoxLayout(self)
 
         header_layout = QHBoxLayout()

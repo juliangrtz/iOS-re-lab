@@ -9,13 +9,21 @@ from core import logger
 
 
 class CapstoneDisassembler:
-    def __init__(self, file_path: str, chunk_size: int = 0x2000):
+    def __init__(
+            self,
+            file_path: str,
+            only_text_section,
+            macho: lief.MachO.Binary,
+            chunk_size: int = 0x2000,
+    ):
         self.file_path = file_path
 
         if not os.path.exists(self.file_path):
             logger.error(f"[Capstone] File not found: {self.file_path}")
             raise FileNotFoundError(self.file_path)
 
+        self.macho = macho
+        self.only_text_section = only_text_section
         self.chunk_size = chunk_size
         self.max_workers = os.cpu_count() or 4
         self.functions = {}
@@ -57,7 +65,12 @@ class CapstoneDisassembler:
 
         with open(self.file_path, "rb") as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
             file_size = mm.size()
-            offsets = range(0, file_size, self.chunk_size)
+
+            if self.only_text_section:
+                s = self.macho.get_section("__text")
+                offsets = range(s.offset, s.offset + s.size, self.chunk_size)
+            else:
+                offsets = range(0, file_size, self.chunk_size)
 
             logger.info(f"[Capstone] File size: {file_size:,} bytes")
             logger.info(f"[Capstone] Using {self.max_workers} threads")

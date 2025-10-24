@@ -46,8 +46,13 @@ class MachOSelectTab(QWidget):
         options_layout.addWidget(self.disasm_checkbox)
         self.disasm_checkbox.setChecked(True)
 
+        self.disas_only_text_checkbox = QCheckBox("Only disassemble __TEXT section")
+        options_layout.addWidget(self.disas_only_text_checkbox)
+        self.disas_only_text_checkbox.setChecked(True)
+
         self.scan_checkbox.stateChanged.connect(self._update_config)
         self.disasm_checkbox.stateChanged.connect(self._update_config)
+        self.disas_only_text_checkbox.stateChanged.connect(self._update_config)
 
         main_layout.addWidget(options_group)
 
@@ -93,6 +98,7 @@ class MachOSelectTab(QWidget):
         ANALYSIS_CONFIG.options = {
             "scan": self.scan_checkbox.isChecked(),
             "disasm": self.disasm_checkbox.isChecked(),
+            "disasm_only_text": self.disas_only_text_checkbox.isChecked(),
         }
 
     def _on_start(self):
@@ -104,7 +110,7 @@ class MachOSelectTab(QWidget):
         self.info_tab.load_macho(file_path)
 
         if ANALYSIS_CONFIG.options.get("disasm") and self.disasm_tab:
-            self.disasm_tab.start_disassembly(file_path)
+            self.disasm_tab.start_disassembly(file_path, ANALYSIS_CONFIG.options.get("disasm_only_text"))
 
         if ANALYSIS_CONFIG.options.get("scan") and self.scanner_tab:
             self.scanner_tab.run_scan(file_path)

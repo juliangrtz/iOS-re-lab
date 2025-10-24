@@ -74,8 +74,8 @@ class MainWindow(QMainWindow):
         )
 
         info_tab = MachOInfoTab()
-        scanner_tab = ScannerTab()
-        disasm_tab = DisassemblyTab()
+        scanner_tab = ScannerTab(info_tab)
+        disasm_tab = DisassemblyTab(info_tab)
         self.docks["Binary Analysis"] = self._add_dock_tabs(
             "Binary Analysis",
             ("File selection", MachOSelectTab(scanner_tab, disasm_tab, info_tab)),

@@ -8,11 +8,13 @@ from PySide6.QtWidgets import (
 from core.concurrency.worker import Worker
 from core.disasm.capstone_disasm import CapstoneDisassembler
 from ui.syntax_highlighters.arm64_highlighter import Arm64Highlighter
+from ui.tabs.binary_analysis.macho_info import MachOInfoTab
 
 
 class DisassemblyTab(QWidget):
-    def __init__(self):
+    def __init__(self, info_tab: MachOInfoTab):
         super().__init__()
+        self.info_tab = info_tab
         self.qvBoxLayout = QVBoxLayout(self)
 
         header_layout = QHBoxLayout()
@@ -64,13 +66,13 @@ class DisassemblyTab(QWidget):
         self.jump_box.setFocus()
         self.jump_box.selectAll()
 
-    def start_disassembly(self, file_path):
+    def start_disassembly(self, file_path, only_text_section):
         if not file_path:
             return
 
         self.disasm_view.clear()
 
-        disassembler = CapstoneDisassembler(file_path)
+        disassembler = CapstoneDisassembler(file_path, only_text_section, self.info_tab.get_macho())
         worker = Worker(disassembler.disassemble)
         worker.signals.result.connect(self._on_disassembly_finished)
         worker.signals.error.connect(self._on_disassembly_error)
