@@ -27,6 +27,23 @@ class CapstoneDisassembler:
         self.chunk_size = chunk_size
         self.max_workers = os.cpu_count() or 4
         self.functions = {}
+        self.start = None
+        self.end = None
+
+    def set_range(self, start, end):
+        try:
+            self.start = int(start, 16) if isinstance(start, str) and start.startswith("0x") else int(
+                start) if start else None
+            self.end = int(end, 16) if isinstance(end, str) and end.startswith("0x") else int(end) if end else None
+            if self.start and self.end and self.start >= self.end:
+                logger.warn("[Capstone] Invalid disassembly range: start >= end, ignoring range.")
+                self.start = self.end = None
+            else:
+                logger.debug(f"[Capstone] Range: {hex(self.start) if self.start else 'start=auto'} -> "
+                             f"{hex(self.end) if self.end else 'end=auto'}")
+        except Exception as e:
+            logger.warn(f"[Capstone] Failed to parse range: {e}")
+            self.start = self.end = None
 
     def _load_functions_with_lief(self):
         binary = lief.parse(self.file_path)
@@ -71,6 +88,23 @@ class CapstoneDisassembler:
                 offsets = range(s.offset, s.offset + s.size, self.chunk_size)
             else:
                 offsets = range(0, file_size, self.chunk_size)
+
+            if self.only_text_section:
+                s = self.macho.get_section("__text")
+                base_start = s.offset
+                base_end = s.offset + s.size
+            else:
+                base_start = 0
+                base_end = file_size
+
+            if self.start is not None:
+                base_start = max(base_start, self.start)
+            if self.end is not None:
+                base_end = min(base_end, self.end)
+
+            offsets = range(base_start, base_end, self.chunk_size)
+
+            logger.info(f"[Capstone] Disassembly range: 0x{base_start:08x} -> 0x{base_end:08x}")
 
             logger.info(f"[Capstone] File size: {file_size:,} bytes")
             logger.info(f"[Capstone] Using {self.max_workers} threads")

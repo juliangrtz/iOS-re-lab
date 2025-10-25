@@ -66,9 +66,24 @@ class DisassemblyTab(QWidget):
         self.jump_box.setFocus()
         self.jump_box.selectAll()
 
-    def start_disassembly(self, file_path, only_text_section):
+    def start_disassembly(
+            self,
+            file_path,
+            only_text_section,
+            start_addr=None,
+            end_addr=None,
+            chunk_size=0x2000
+    ):
         if not file_path:
             return
+
+        disassembler = CapstoneDisassembler(
+            file_path,
+            only_text_section,
+            self.info_tab.get_macho(),
+            chunk_size=chunk_size
+        )
+        disassembler.set_range(start_addr, end_addr)
 
         self.disasm_view.clear()
 
