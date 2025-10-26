@@ -10,9 +10,20 @@ from core.concurrency.subprocess import Subprocess
 from core.scan import MachOScanner
 
 
-def run_scan_process(file_path: str, verbose: bool = True):
+def run_scan_process(
+        file_path: str,
+        syscall_map_path,
+        verbose,
+        run_yara
+):
     scanner = MachOScanner()
-    results = scanner.analyze(file_path, verbose=verbose, out_path=None)
+    results = scanner.analyze(
+        file_path,
+        verbose=verbose,
+        out_path=None,
+        syscall_map_path=syscall_map_path,
+        run_yara=run_yara
+    )
     return json.dumps(results)
 
 
@@ -43,7 +54,13 @@ class ScannerTab(QWidget):
         self.file_path = None
         self.worker = Subprocess()
 
-    def run_scan(self, file_path):
+    def run_scan(
+            self,
+            file_path,
+            syscall_map_path,
+            verbose,
+            run_yara
+    ):
         if not file_path:
             return
 
@@ -57,7 +74,9 @@ class ScannerTab(QWidget):
         self.worker.submit(
             run_scan_process,
             file_path,
-            True,
+            syscall_map_path,
+            verbose,
+            run_yara,
             on_done=self._on_finish,
             on_error=self._display_error
         )

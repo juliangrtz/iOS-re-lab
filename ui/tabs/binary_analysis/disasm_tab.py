@@ -1,8 +1,11 @@
-from PySide6.QtCore import QThreadPool
+import os
+import tempfile
+
+from PySide6.QtCore import QThreadPool, QTimer
 from PySide6.QtGui import QShortcut, QKeySequence, QFont
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel,
-    QHBoxLayout, QMessageBox, QLineEdit, QPlainTextEdit
+    QWidget, QVBoxLayout, QLabel, QHBoxLayout,
+    QMessageBox, QLineEdit, QPlainTextEdit
 )
 
 from core.concurrency.worker import Worker
@@ -34,8 +37,6 @@ class DisassemblyTab(QWidget):
         search_layout.addWidget(self.search_box)
         search_layout.addWidget(self.jump_box)
 
-        # QPlainTextEdit is utterly horrible for large amounts of disassembly.
-        # TODO Look into alternatives.
         self.disasm_view = QPlainTextEdit()
         self.disasm_view.setReadOnly(True)
         self.disasm_view.setLineWrapMode(QPlainTextEdit.NoWrap)
@@ -57,6 +58,11 @@ class DisassemblyTab(QWidget):
 
         self.setAcceptDrops(True)
         self.file_path = None
+        self.tmp_disasm_path = None
+        self.loaded_lines = 0
+        self.lines_per_chunk = 2000
+
+        self.disasm_view.verticalScrollBar().valueChanged.connect(self._on_scroll)
 
     def _focus_search(self):
         self.search_box.setFocus()
@@ -77,6 +83,12 @@ class DisassemblyTab(QWidget):
         if not file_path:
             return
 
+        fd, tmp_path = tempfile.mkstemp(prefix="disasm_", suffix=".txt")
+        os.close(fd)
+        self.tmp_disasm_path = tmp_path
+        self.disasm_view.setPlainText("[INFO] Disassembling, please wait...")
+        self.loaded_lines = 0
+
         disassembler = CapstoneDisassembler(
             file_path,
             only_text_section,
@@ -85,16 +97,44 @@ class DisassemblyTab(QWidget):
         )
         disassembler.set_range(start_addr, end_addr)
 
-        self.disasm_view.clear()
-
-        disassembler = CapstoneDisassembler(file_path, only_text_section, self.info_tab.get_macho())
-        worker = Worker(disassembler.disassemble)
+        worker = Worker(self._run_disassembly_to_file, disassembler)
         worker.signals.result.connect(self._on_disassembly_finished)
         worker.signals.error.connect(self._on_disassembly_error)
         QThreadPool.globalInstance().start(worker)
 
-    def _on_disassembly_finished(self, text: str):
-        self.disasm_view.setPlainText(text)
+    def _run_disassembly_to_file(self, disassembler: CapstoneDisassembler):
+        text = disassembler.disassemble()
+        with open(self.tmp_disasm_path, "w", encoding="utf-8", errors="ignore") as f:
+            f.write(text)
+        return self.tmp_disasm_path
+
+    def _on_disassembly_finished(self, tmp_path: str):
+        self.disasm_view.clear()
+        self._load_next_chunk()
+
+    def _load_next_chunk(self):
+        if not self.tmp_disasm_path or not os.path.exists(self.tmp_disasm_path):
+            return
+
+        with open(self.tmp_disasm_path, "r", encoding="utf-8", errors="ignore") as f:
+            for _ in range(self.loaded_lines):
+                f.readline()
+
+            lines = []
+            for _ in range(self.lines_per_chunk):
+                line = f.readline()
+                if not line:
+                    break
+                lines.append(line.rstrip())
+
+        if lines:
+            self.disasm_view.appendPlainText("\n".join(lines))
+            self.loaded_lines += len(lines)
+
+    def _on_scroll(self, value):
+        scroll_bar = self.disasm_view.verticalScrollBar()
+        if scroll_bar.maximum() - value < 50:
+            QTimer.singleShot(0, self._load_next_chunk)
 
     def _on_disassembly_error(self, err_tuple):
         exctype, value, tb_str = err_tuple
@@ -117,6 +157,5 @@ class DisassemblyTab(QWidget):
         if cursor.isNull():
             QMessageBox.information(self, "Jump", f"Address {addr_text} not found!")
             return
-
         self.disasm_view.setTextCursor(cursor)
         self.disasm_view.ensureCursorVisible()
