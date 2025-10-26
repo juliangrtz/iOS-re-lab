@@ -61,6 +61,8 @@ class _GuiLogger:
         color = COLOR_MAPPINGS.get(level, "")
         html_text = self._ansi_converter.convert(f"{color}{text}{Style.RESET_ALL}", full=False)
 
+        # todo smelly
+
         QMetaObject.invokeMethod(
             self._text_widget,
             "append",

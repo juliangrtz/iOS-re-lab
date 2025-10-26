@@ -44,8 +44,6 @@ class ScannerTab(QWidget):
         self.tree.setColumnWidth(0, 220)
         self.tree.setAlternatingRowColors(True)
 
-        # todo add spinner
-
         self.qvBoxLayout.addLayout(header_layout)
         self.qvBoxLayout.addWidget(self.tree)
 

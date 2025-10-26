@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal, QRunnable, Slot
 
 # Used for lighter calculations where a thread is enough.
 # Briefly blocking the UI is acceptable.
+# TODO: make this truly multi-threaded. instances of this still freeze the UI
 class WorkerSignals(QObject):
     finished = Signal()
     error = Signal(tuple)

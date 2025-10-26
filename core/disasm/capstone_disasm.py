@@ -7,7 +7,7 @@ from capstone import Cs, CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN
 
 from core import logger
 
-
+# todo in-built deobfuscation -> analyze jumps
 class CapstoneDisassembler:
     def __init__(
             self,

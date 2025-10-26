@@ -142,6 +142,7 @@ class MachOSelectTab(QWidget):
         self._update_config()
         self.start_btn.setEnabled(True)
 
+
     def _update_config(self):
         ANALYSIS_CONFIG.options = {
             "scan": self.scan_checkbox.isChecked(),
