@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt
 from PySide6.QtGui import QShortcut, QKeySequence, QFont, QAction, QCursor, QColor, QTextFormat, QTextCursor
@@ -11,6 +12,8 @@ from PySide6.QtWidgets import (
 from core import logger
 from core.concurrency.worker import Worker
 from core.disasm.capstone_disasm import CapstoneDisassembler
+from core.frida.frida_codegen import generate_native_hook
+from core.frida.frida_integration import FridaManager
 from ui.syntax_highlighters.arm64_highlighter import Arm64Highlighter
 from ui.tabs.binary_analysis.macho_info import MachOInfoTab
 
@@ -67,6 +70,7 @@ class DisassemblyTab(QWidget):
 
         self.disasm_view.verticalScrollBar().valueChanged.connect(self._on_scroll)
         self.marked_lines = set()
+        self.frida_manager = FridaManager()
 
     def context_menu(self):
         if self.disasm_view.document().isEmpty():
@@ -81,8 +85,18 @@ class DisassemblyTab(QWidget):
         mark_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarCloseButton))
         mark_action.triggered.connect(self._mark_location)
 
+        frida_menu = QMenu("Frida", self)
+        gen_frida_hook_line = QAction("Generate hook here", self)
+        gen_frida_hook_line.triggered.connect(lambda: self._frida_gen_hook(False))
+        frida_menu.addAction(gen_frida_hook_line)
+
+        gen_frida_hook_fn = QAction("Generate hook for function", self)
+        gen_frida_hook_fn.triggered.connect(lambda: self._frida_gen_hook(True))
+        frida_menu.addAction(gen_frida_hook_fn)
+
         menu.addAction(export_action)
         menu.addAction(mark_action)
+        menu.addMenu(frida_menu)
 
         menu.exec_(QCursor.pos())
 
@@ -112,6 +126,47 @@ class DisassemblyTab(QWidget):
             self.marked_lines.add(current_line)
 
         self._update_marked_lines()
+
+    def _frida_gen_hook(self, function: bool):
+        cursor = self.disasm_view.textCursor()
+        line = cursor.blockNumber()
+        doc = self.disasm_view.document()
+        total_lines = doc.blockCount()
+
+        current_text = doc.findBlockByLineNumber(line).text().strip()
+        if not current_text:
+            logger.error("[FridaCodegen] No valid line selected.")
+            return
+
+        module = Path(self.file_path).stem
+        ctx_lines = []
+        start_line = line
+
+        # todo pretty dirty, needs revision
+        if function:
+            while start_line > 0:
+                text = doc.findBlockByLineNumber(start_line).text()
+                if text.startswith("fn_") and start_line != line:
+                    break
+                start_line -= 1
+
+            t = doc.findBlockByLineNumber(start_line).text()
+            offset = "0x" + t.split("_", 1)[1].replace(":", "")
+        else:
+            if current_text.startswith("fn_"):
+                offset = "0x" + current_text.split("_", 1)[1].replace(":", "")
+            else:
+                offset = "0x" + current_text.split(":", 1)[0]
+
+        ctx_window = 5
+        end_line = min(total_lines, start_line + ctx_window)
+
+        for i in range(start_line, end_line + 1):
+            ctx_lines.append(doc.findBlockByLineNumber(i).text())
+
+        ctx = "\n".join(ctx_lines).strip()
+
+        generate_native_hook(ctx, module, offset)
 
     def _update_marked_lines(self):
         extra_selections = []
@@ -150,6 +205,7 @@ class DisassemblyTab(QWidget):
         if not file_path:
             return
 
+        self.file_path = file_path
         fd, tmp_path = tempfile.mkstemp(prefix="disasm_", suffix=".txt")
         os.close(fd)
         self.tmp_disasm_path = tmp_path

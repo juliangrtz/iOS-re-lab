@@ -9,6 +9,7 @@ from core import logger
 class FridaError(Exception):
     pass
 
+
 # todo fully support Frida
 class FridaManager:
     def __init__(self):

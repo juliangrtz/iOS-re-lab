@@ -8,6 +8,7 @@ IPAs/
 libs/
 secret/
 logs/
+hooks/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
