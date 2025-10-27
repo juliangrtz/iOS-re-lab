@@ -2,12 +2,13 @@ import os
 import tempfile
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt
-from PySide6.QtGui import QShortcut, QKeySequence, QFont, QAction, QCursor
+from PySide6.QtGui import QShortcut, QKeySequence, QFont, QAction, QCursor, QColor, QTextFormat, QTextCursor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QHBoxLayout,
-    QMessageBox, QLineEdit, QPlainTextEdit, QMenu, QStyle
+    QMessageBox, QLineEdit, QPlainTextEdit, QMenu, QStyle, QFileDialog, QTextEdit
 )
 
+from core import logger
 from core.concurrency.worker import Worker
 from core.disasm.capstone_disasm import CapstoneDisassembler
 from ui.syntax_highlighters.arm64_highlighter import Arm64Highlighter
@@ -39,13 +40,13 @@ class DisassemblyTab(QWidget):
 
         self.disasm_view = QPlainTextEdit()
         self.disasm_view.setReadOnly(True)
-        self.disasm_view.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.disasm_view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.disasm_view.setUndoRedoEnabled(False)
         self.disasm_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.disasm_view.customContextMenuRequested.connect(self.context_menu)
 
         font = QFont("Consolas")
-        font.setStyleHint(QFont.Monospace)
+        font.setStyleHint(QFont.StyleHint.Monospace)
         self.disasm_view.setFont(font)
 
         self.highlighter = Arm64Highlighter(self.disasm_view.document())
@@ -65,6 +66,7 @@ class DisassemblyTab(QWidget):
         self.lines_per_chunk = 2000
 
         self.disasm_view.verticalScrollBar().valueChanged.connect(self._on_scroll)
+        self.marked_lines = set()
 
     def context_menu(self):
         if self.disasm_view.document().isEmpty():
@@ -85,12 +87,49 @@ class DisassemblyTab(QWidget):
         menu.exec_(QCursor.pos())
 
     def _export_to_file(self):
-        # todo
-        pass
+        file_dialog = QFileDialog(self)
+        file_dialog.setWindowTitle("Export disassembly")
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        file_dialog.setViewMode(QFileDialog.ViewMode.Detail)
+        file_dialog.setNameFilter("Assembly files (*.asm);;All files (*)")
+
+        if file_dialog.exec():
+            selected_file = file_dialog.selectedFiles()[0]
+            try:
+                with open(selected_file, "w") as f:
+                    f.writelines(self.disasm_view.toPlainText())
+                    logger.info(f"Disassembly saved to {selected_file}.")
+            except Exception as e:
+                logger.error(f"Failed to save to {selected_file}: {e}")
 
     def _mark_location(self):
-        # todo
-        pass
+        cursor = self.disasm_view.textCursor()
+        current_line = cursor.blockNumber()
+
+        if current_line in self.marked_lines:
+            self.marked_lines.remove(current_line)
+        else:
+            self.marked_lines.add(current_line)
+
+        self._update_marked_lines()
+
+    def _update_marked_lines(self):
+        extra_selections = []
+
+        for line_num in self.marked_lines:
+            selection = QTextEdit.ExtraSelection()
+            line_color = QColor(255, 255, 150, 100)
+            selection.format.setBackground(line_color)
+            selection.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
+
+            cursor = self.disasm_view.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.Start)
+            cursor.movePosition(QTextCursor.MoveOperation.Down, QTextCursor.MoveMode.MoveAnchor, line_num)
+            selection.cursor = cursor
+
+            extra_selections.append(selection)
+
+        self.disasm_view.setExtraSelections(extra_selections)
 
     def _focus_search(self):
         self.search_box.setFocus()
