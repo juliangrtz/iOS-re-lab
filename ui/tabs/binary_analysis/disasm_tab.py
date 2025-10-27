@@ -1,11 +1,11 @@
 import os
 import tempfile
 
-from PySide6.QtCore import QThreadPool, QTimer
-from PySide6.QtGui import QShortcut, QKeySequence, QFont
+from PySide6.QtCore import QThreadPool, QTimer, Qt
+from PySide6.QtGui import QShortcut, QKeySequence, QFont, QAction, QCursor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QHBoxLayout,
-    QMessageBox, QLineEdit, QPlainTextEdit
+    QMessageBox, QLineEdit, QPlainTextEdit, QMenu, QStyle
 )
 
 from core.concurrency.worker import Worker
@@ -41,6 +41,8 @@ class DisassemblyTab(QWidget):
         self.disasm_view.setReadOnly(True)
         self.disasm_view.setLineWrapMode(QPlainTextEdit.NoWrap)
         self.disasm_view.setUndoRedoEnabled(False)
+        self.disasm_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.disasm_view.customContextMenuRequested.connect(self.context_menu)
 
         font = QFont("Consolas")
         font.setStyleHint(QFont.Monospace)
@@ -63,6 +65,32 @@ class DisassemblyTab(QWidget):
         self.lines_per_chunk = 2000
 
         self.disasm_view.verticalScrollBar().valueChanged.connect(self._on_scroll)
+
+    def context_menu(self):
+        if self.disasm_view.document().isEmpty():
+            return
+
+        menu = QMenu(self)
+        export_action = QAction("Export to file")
+        export_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+        export_action.triggered.connect(self._export_to_file)
+
+        mark_action = QAction("Mark")
+        mark_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarCloseButton))
+        mark_action.triggered.connect(self._mark_location)
+
+        menu.addAction(export_action)
+        menu.addAction(mark_action)
+
+        menu.exec_(QCursor.pos())
+
+    def _export_to_file(self):
+        # todo
+        pass
+
+    def _mark_location(self):
+        # todo
+        pass
 
     def _focus_search(self):
         self.search_box.setFocus()
