@@ -142,19 +142,20 @@ class MachOSelectTab(QWidget):
         self._update_config()
         self.start_btn.setEnabled(True)
 
-
     def _update_config(self):
-        ANALYSIS_CONFIG.options = {
-            "scan": self.scan_checkbox.isChecked(),
-            "yara": self.yara_checkbox.isChecked(),
-            "verbose": self.verbose_checkbox.isChecked(),
-            "syscall_map": self.syscall_path_edit.text(),
-            "disasm": self.disasm_checkbox.isChecked(),
-            "disasm_only_text": self.disas_only_text_checkbox.isChecked(),
-            "start_addr": self.start_addr_edit.text() or None,
-            "end_addr": self.end_addr_edit.text() or None,
-            "chunk_size": self.chunk_size_spin.value(),
-        }
+        opts = ANALYSIS_CONFIG.options
+        opts.scan = self.scan_checkbox.isChecked()
+        opts.yara = self.yara_checkbox.isChecked()
+        opts.verbose = self.verbose_checkbox.isChecked()
+        opts.syscall_map = self.syscall_path_edit.text()
+        opts.disasm = self.disasm_checkbox.isChecked()
+        opts.disasm_only_text = self.disas_only_text_checkbox.isChecked()
+        opts.start_addr = self.start_addr_edit.text() or None
+        opts.end_addr = self.end_addr_edit.text() or None
+        opts.chunk_size = self.chunk_size_spin.value()
+
+    def reset_config(self):
+        self.__init__()
 
     def _on_start(self):
         file_path = ANALYSIS_CONFIG.file_path
