@@ -1,4 +1,4 @@
-VERSION = "1.0"
+VERSION = "1.1"
 
 # https://opensource.apple.com/source/cctools/cctools-795/include/mach-o/loader.h
 # MAGIC_32 = [0xFEEDFACE, 0xCEFAEDFE]
