@@ -7,6 +7,8 @@ WIP reverse engineering suite for iOS applications. Detects common anti-reverse-
 64-bit Mach-O binaries. Made possible with [LIEF](https://lief.re/), [Capstone](http://www.capstone-engine.org/)
 and [YARA](https://github.com/VirusTotal/yara). UI based on PySide6.
 
+⚠️ Partially vibe coded because I suck at Python! Use caution!⚠️
+
 ## Features
 
 - Anti-Reversing detections
